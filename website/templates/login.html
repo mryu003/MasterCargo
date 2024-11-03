@@ -1,44 +1,15 @@
 <!DOCTYPE html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <style>
-    body, html {
-        height: 100%;
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: Arial, sans-serif;
-        background-color: #2c2f33;
-        color: #d1d1d1;
-    }
-    .loginContainer {
-        text-align: center;
-    }
-    .usernameInput, .loginButton {
-        display: block;
-        width: 200px;
-        margin: 10px auto;
-        padding: 10px;
-        font-size: 16px;
-    }
-    .loginButton {
-        background-color: #9b9494;
-        color: white;
-        border: none;
-        cursor: pointer;
-    }
-    .loginButton:hover {
-        background-color: #9b9494;
-    }
-    </style>
-    </head>
-    <body>
-        <div class="loginContainer">
-            <input type="text" class="usernameInput" placeholder="Enter Your Name" name="username">
-            <button class="loginButton" onclick="location.href='/home'">Sign In</button>
-        </div>
-    </body>
-    </html>
+    <meta charset = "UTF-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+    <Title> Login Page </Title>
+    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
+</head>
+
+<body>
+    <div class = "loginContainer">
+        <input type = "text" class = "usernameInput" placeholder = "Enter Your Name" name = "username">
+        <button class = "loginButton" onclick = "location.href = '/home'"> Sign In </button>
+    </div>
+</body>
