@@ -12,5 +12,36 @@
     <div class = "textButton">
         <button class = "homeButton" onclick = "location.href = '/load'"> Load/Unload </button>
         <button class = "homeButton" onclick = "location.href = '/balance'"> Balance Ship </button>
+        <button class = "uploadOpenButton" onclick = "openModal()"> Upload Manifest </button>
+
+        <div id = "uploadModal" class= "modal">
+            <div class = "modalContent">
+                <span class = "close" onclick = "closeModal()"> &times;</span>
+                <label for = "fileUpload" class = "uploadLabel" > Upload Manifest: </label>
+                <input type = "file" id = "fileUpload" name = "fileUpload" class = "uploadButton">
+                <button class = "submitButton" onclick = "submitUpload()"> Submit Manifest </button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function openModal() {
+            document.getElementById("uploadModal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("uploadModal").style.display = "none";
+        }
+
+        function submitUpload() { //This is where we would put code for what to do after the manifest upload
+            const fileInput = document.getElementById("fileUpload");
+            if (fileInput.files.length > 0) {
+                alert("Manifest Submitted: " + fileInput.files[0].name);
+                closeModal();
+            } else {
+                alert("Please select manifest to upload.");
+            }
+        }
+    </script>
 </body>
+</html>
