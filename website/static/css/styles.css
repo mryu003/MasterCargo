@@ -10,7 +10,7 @@ body, html {
 }
 
 .loginContainer {
-    text-align: center
+    text-align: center;
 }
 
 .usernameInput, .loginButton {
@@ -134,3 +134,46 @@ body, html {
 .submitButton:hover, .uploadButton:hover {
     background-color: #8a8383;
 }
+
+/*Styling for the Balancing grid*/
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);  
+    grid-template-rows: repeat(8, 1fr);      
+    gap: 9px;                               
+    width: 90vh;   
+    height: 60vh;                           
+    margin: 20px auto;
+    background-color: #2c2f33;
+    max-width: 1200px;                      
+}
+
+.grid-cell {
+    background-color: #dcdcdcc2;
+    width: 60px; 
+    height: 40px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 14px;
+    color: #d1d1d1;
+    cursor: pointer;
+}
+
+.page-title {
+    display: flex;
+    justify-content: center;      
+    align-items: center;          
+    width: 100%;                  
+    position: absolute;          
+    top: 0;                       
+    height: 60px;                
+    background-color: #2c2f33;   
+    color: #d1d1d1;
+    font-size: 18px;            
+    font-weight: bold;
+}
+
+
+

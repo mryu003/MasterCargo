@@ -1,5 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <body>
-        <h1> This is temp page for balancing ship</h1>
-    </body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BalanceShip</title>
+    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
+    <script>
+        //Pop-Up button 
+        window.onload = function(){
+            if(confirm("Are you ready to Balance?")){
+                console.log("User is ready to balance");
+            } else {
+                console.log("User is not ready to balance.");
+            }
+             // Create a 12x8 grid for our cargo - Temporary Grid for visuals 
+            const gridContainer = document.querySelector('.grid-container');
+            for(let i = 0; i < 12 * 8; ++i){
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                // Give each cell a unique id for load/unload purposes
+                cell.id = `cell-${i}`;
+                cell.onclick = function() { 
+                    AdjustContainer(cell); 
+                };
+                gridContainer.appendChild(cell);
+            }
+        };
+
+        // Function to adjust the cells
+        function AdjustContainer(cell) {
+          
+        }
+        
+    </script>
 </head>
+<body>
+    <header class="page-title">
+        <h1>Balancing the Cargo Ship</h1>
+    </header>
+    <div class="content">
+        <div class="grid-container">
+        </div>
+    </div>
+</body>
+
+</html>
