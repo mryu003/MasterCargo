@@ -1,5 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <body>
-        <h1> This is temp page for load</h1>
-    </body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Page</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}"> 
 </head>
+<body>
+    <header class="page-title">
+        <h1>Loading Page</h1>
+    </header>
+
+    <div class="loginContainer">
+        <form id="ItemForm">
+            <label for="itemInput">Enter an item to load:</label>
+            <input type="text" id="itemInput" class="usernameInput" placeholder="Type something..." required>
+            <button type="submit" class="loginButton">Add Item</button>
+        </form>
+        <h2>Loaded Items:</h2>
+        <ul id="ItemList"></ul>
+    </div>
+
+    <script>
+        // Array to hold items to load
+        const arrayOfItems = [];
+
+        const itemForm = document.getElementById('ItemForm');
+        const itemInput = document.getElementById('itemInput');
+        const itemList = document.getElementById('ItemList');
+
+        // Waits for user to trigger the form submission 
+        itemForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const newItem = itemInput.value.trim();
+            if (newItem) {
+                arrayOfItems.push(newItem);
+                displayItems();
+                itemInput.value = '';
+            }
+        });
+
+        function displayItems() {
+            itemList.innerHTML = '';
+            arrayOfItems.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = item;
+                itemList.appendChild(listItem);
+            });
+        }
+    </script>
+</body>
+</html>
