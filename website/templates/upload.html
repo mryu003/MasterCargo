@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset = "UTF-8">
+    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+    <Title> Uploading Manifest </Title>
+    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
+</head>
+
+<body>
+    <header>
+        <nav>
+            <div class="logFile">
+                <button class="closeYear"> Close Year </button>
+                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            </div>
+            <button class="loginButton modal-button" onclick="document.getElementById('loginModal').style.display='block'"> Log In </button> 
+        </nav>
+    </header>
+    <div class = "uploadContainer">
+        <h2> Upload Manifest </h2>
+        <form method = "POST" enctype = "multipart/form-data">
+            <label for = "fileUpload"> Upload Manifest file: </label>
+            <input type = "file" name = "fileUpload" id = "fileUpload" class = "uploadButton" required>
+            <button type = "submit" class = "submitButton"> Submit Manifest </button>
+        </form>
+    </div>
+</body>
+</html>
