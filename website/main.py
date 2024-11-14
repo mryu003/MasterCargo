@@ -76,8 +76,9 @@ def upload():
 
                 with open(original_file_path, 'r') as file:
                     content = file.read()
-                modified_content = content + "\nModified at: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+                modified_content = content
+                
                 with open(modified_file_path, 'w') as file:
                     file.write(modified_content)
 
