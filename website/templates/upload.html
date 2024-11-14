@@ -3,7 +3,7 @@
 <head>
     <meta charset = "UTF-8">
     <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
-    <Title> Home Page </Title>
+    <Title> Uploading Manifest </Title>
     <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
 </head>
 
@@ -17,12 +17,15 @@
             <button class="loginButton modal-button" onclick="document.getElementById('loginModal').style.display='block'"> Log In </button> 
         </nav>
     </header>
-
-    <div class = "textButton">
-        <button class = "homeButton" onclick = "location.href = '/upload?next=load'" > Load/Unload </button>
-        <button class = "homeButton" onclick = "location.href = '/upload?next=balance'"> Balance Ship</button>"
+    <div class = "uploadContainer">
+        <h2> Upload Manifest </h2>
+        <form method = "POST" enctype = "multipart/form-data">
+            <label for = "fileUpload"> Upload Manifest file: </label>
+            <input type = "file" name = "fileUpload" id = "fileUpload" class = "uploadButton" required>
+            <button type = "submit" class = "submitButton"> Submit Manifest </button>
+        </form>
     </div>
-
+    
     <div id = "loginModal" class = "modal">
         <div class = "modalContent">
             <span class = "close" onclick = "document.getElementById('loginModal').style.display='none'"> &times;</span>

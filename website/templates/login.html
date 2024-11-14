@@ -9,7 +9,9 @@
 
 <body>
     <div class = "loginContainer">
-        <input type = "text" class = "usernameInput" placeholder = "Enter Your Name" name = "username">
-        <button class = "signinButton" onclick = "location.href = '/home'"> Sign In </button>
+        <form action = "/" method = "POST">
+            <input type = "text" class = "usernameInput" placeholder = "Enter Your Name" name = "username" required>
+            <button class = "signinButton" onclick = "location.href = '/home'"> Sign In </button>
+        </form>
     </div>
 </body>
