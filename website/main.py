@@ -3,20 +3,25 @@ import time
 import os
 from datetime import datetime
 
+MANIFEST_FOLDER = './manifests'
+LOG_FOLDER = './log_files'
+ALLOWED_EXTENSIONS = {'txt'}
+
 app = Flask(__name__)
 
-manifest_folder = os.path.join(app.static_folder, 'manifests')
-app.config['manifest_folder'] = manifest_folder
+app.config['MANIFEST_FOLDER'] = MANIFEST_FOLDER
 
-if not os.path.exists(manifest_folder):
-    os.makedirs(manifest_folder)
+if not os.path.exists(MANIFEST_FOLDER):
+    os.makedirs(MANIFEST_FOLDER)
+
+if not os.path.exists(LOG_FOLDER):
+    os.makedirs(LOG_FOLDER)
 
 @app.route('/', methods = ['GET', 'POST'])
 def index():
     curr_year = time.strftime("%Y")
     file_name = "KeoghsPort" + curr_year + ".txt"
-    log_files_dir = os.path.join(app.static_folder, 'log_files')
-    log_file_path = os.path.join(log_files_dir, file_name)
+    log_file_path = os.path.join(LOG_FOLDER, file_name)
 
     if os.path.exists(log_file_path):
         return redirect(url_for('home'))
@@ -27,13 +32,12 @@ def index():
 def home():
     curr_year = time.strftime("%Y")
     file_name = "KeoghsPort" + curr_year + ".txt"
-    log_files_dir = os.path.join(app.static_folder, 'log_files')
-    log_file_path = os.path.join(log_files_dir, file_name)
+    log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
     if request.method == 'POST':
         username = request.form.get('username')
         if username:
-            if not os.path.exists(log_files_dir):
-                os.makedirs(log_files_dir)
+            if not os.path.exists(LOG_FOLDER):
+                os.makedirs(LOG_FOLDER)
 
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -56,8 +60,7 @@ def balance():
 def download_log():
     curr_year = time.strftime("%Y")
     file_name = "KeoghsPort" + curr_year + ".txt"
-    log_files = os.path.join(app.static_folder, 'log_files')
-    return send_from_directory(log_files, file_name, as_attachment = True)
+    return send_from_directory(app.config['LOG_FOLDER'], file_name, as_attachment = True)
 
 @app.route('/upload', methods = ['GET', 'POST'])
 def upload():
@@ -68,11 +71,11 @@ def upload():
             file = request.files['fileUpload']
             if file:
                 filename = file.filename
-                original_file_path = os.path.join(app.config['manifest_folder'], filename)
+                original_file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
                 file.save(original_file_path)
 
                 modified_filename = filename.replace('.txt', 'OUTBOUND.txt')
-                modified_file_path = os.path.join(app.config['manifest_folder'], modified_filename)
+                modified_file_path = os.path.join(app.config['MANIFEST_FOLDER'], modified_filename)
 
                 with open(original_file_path, 'r') as file:
                     content = file.read()
