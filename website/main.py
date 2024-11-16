@@ -3,8 +3,24 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+def create_app(test_config=None) {
+    app = Flask(__name__, instance_relative_config=True)
 
+    app.config.from_mapping(
+        SECRET_KEY='dev',
+    )
+
+    if test_config is None:
+        app.config.from_pyfile('config.py', silent=True)
+    else:
+        app.config.from_mapping(test_config)
+
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+    
+    
 manifest_folder = os.path.join(app.static_folder, 'manifests')
 app.config['manifest_folder'] = manifest_folder
 
@@ -88,6 +104,9 @@ def upload():
                     return redirect(url_for('balance'))
     
     return render_template('upload.html', next_page = next_page)
+    return app
+}
+
 
 if __name__ == '__main__':
     app.run(debug=True)  #Change this to false when we turn in
