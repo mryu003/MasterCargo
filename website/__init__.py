@@ -51,7 +51,7 @@ def create_app(test_config=None):
     def home():
         curr_year = time.strftime("%Y")
         file_name = "KeoghsPort" + curr_year + ".txt"
-        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+        log_file_path = os.path.join(LOG_FOLDER, file_name)
         if request.method == 'POST':
             username = request.form.get('username')
             if username:
