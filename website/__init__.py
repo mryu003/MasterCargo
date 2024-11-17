@@ -8,13 +8,14 @@ LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__)
 
     app.config.from_mapping(
         SECRET_KEY='dev',
-    )
+    ) 
 
     app.config['MANIFEST_FOLDER'] = MANIFEST_FOLDER
+    app.config['LOG_FOLDER'] = LOG_FOLDER
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
@@ -22,25 +23,17 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     try:
-        os.makedirs(app.instance_path)
+        os.makedirs(MANIFEST_FOLDER)
+        os.makedirs(LOG_FOLDER)
     except OSError:
         pass
-    
-    
-    manifest_folder = os.path.join(app.static_folder, 'manifests')
-    app.config['manifest_folder'] = manifest_folder
 
-    if not os.path.exists(MANIFEST_FOLDER):
-        os.makedirs(MANIFEST_FOLDER)
-
-    if not os.path.exists(LOG_FOLDER):
-        os.makedirs(LOG_FOLDER)
 
     @app.route('/', methods = ['GET', 'POST'])
     def index():
         curr_year = time.strftime("%Y")
         file_name = "KeoghsPort" + curr_year + ".txt"
-        log_file_path = os.path.join(LOG_FOLDER, file_name)
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
@@ -51,7 +44,7 @@ def create_app(test_config=None):
     def home():
         curr_year = time.strftime("%Y")
         file_name = "KeoghsPort" + curr_year + ".txt"
-        log_file_path = os.path.join(LOG_FOLDER, file_name)
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
         if request.method == 'POST':
             username = request.form.get('username')
             if username:
@@ -78,8 +71,9 @@ def create_app(test_config=None):
     @app.route('/download')
     def download_log():
         curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
-        return send_from_directory(app.config['LOG_FOLDER'], file_name, as_attachment = True)
+        filename = "KeoghsPort" + curr_year + ".txt"
+        log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
+        return send_from_directory(log_file_dir, filename, as_attachment = True)
 
     @app.route('/upload', methods = ['GET', 'POST'])
     def upload():
