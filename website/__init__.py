@@ -2,10 +2,18 @@ from flask import Flask, render_template, send_from_directory, request, redirect
 import time
 import os
 from datetime import datetime
+from pytz import timezone
 
 MANIFEST_FOLDER = './manifests'
 LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
+
+def get_pst_time():
+    pst = timezone('US/Pacific')
+    now = datetime.now(pst)
+    floored_time = now.replace(second = 0, microsecond = 0)
+    return floored_time.strftime('%Y-%m-%d %H:%M')
+
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -54,7 +62,7 @@ def create_app(test_config=None):
                 if not os.path.exists(LOG_FOLDER):
                     os.makedirs(LOG_FOLDER)
 
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = get_pst_time()
 
                 with open(log_file_path, 'a') as file:
                     file.write(f"{timestamp} {username} signed in \n")
