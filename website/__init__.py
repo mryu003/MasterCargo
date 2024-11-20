@@ -110,4 +110,28 @@ def create_app(test_config=None):
                         return redirect(url_for('balance'))
         
         return render_template('upload.html', next_page = next_page)
+
+    @app.route('/add_note', methods=['POST'])
+    def add_note():
+        data = request.get_json()
+        note = data.get('note', '').strip()
+
+        if not note:
+            return jsonify({"error": "Note is empty"}), 400
+
+        curr_year = time.strftime("%Y")
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_files_path = os.path.join(app.static_folder, 'log_files')
+        os.makedirs(log_files_path, exist_ok=True)  # Ensure the directory exists
+
+        file_path = os.path.join(log_files_path, file_name)
+
+        try:
+            with open(file_path, 'a') as log_file:
+                log_file.write(note + '\n')
+            return jsonify({"message": "Note added successfully"}), 200
+        except Exception as e:
+            print(f"Error writing note: {e}")
+            return jsonify({"error": "Failed to add note"}), 500
+            
     return app
