@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for
+from flask import Flask, render_template, send_from_directory, safe_join, request, redirect, url_for
 import time
 import os
 from datetime import datetime
@@ -74,6 +74,12 @@ def create_app(test_config=None):
         filename = "KeoghsPort" + curr_year + ".txt"
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment = True)
+
+    @app.route('/download/<filename>')
+    def download_manifest(filename):
+        # Ensure the filename is safe and comes from the 'manifests' directory
+        manifests_path = safe_join(app.static_folder, 'manifests')
+        return send_from_directory(directory=manifests_path, path=filename, as_attachment=True)
 
     @app.route('/upload', methods = ['GET', 'POST'])
     def upload():
