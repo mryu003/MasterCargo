@@ -35,6 +35,40 @@
             </form>
         </div>
     </div>
+
+    <div class="noteSection">
+        <textarea id="noteInput" class="noteInput" placeholder="Write your note here..." rows="4"></textarea>
+        <button class="addNoteButton" onclick="addNote()">Add Note</button>
+    </div>
+    <script>
+        async function addNote() {
+            const note = document.getElementById('noteInput').value.trim();
+            if (note === "") {
+                alert("Please enter a note before adding.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/add_note', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ note })
+                });
+
+                if (response.ok) {
+                    alert("Note added successfully!");
+                    document.getElementById('noteInput').value = ''; // Clear input
+                } else {
+                    alert("Failed to add note. Try again later.");
+                }
+            } catch (error) {
+                console.error("Error adding note:", error);
+                alert("An error occurred while adding the note.");
+            }
+        }
+    </script>
     
     <script>
         window.onclick = function(event) {
