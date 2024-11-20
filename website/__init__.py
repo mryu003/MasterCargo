@@ -38,7 +38,10 @@ def create_app(test_config=None):
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
         
-        return render_template('home.html', logged_in = False)
+        if request.method == 'POST':
+            return home()
+        
+        return render_template('signin.html')
 
     @app.route('/home', methods = ['GET', 'POST'])
     def home():
