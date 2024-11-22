@@ -28,6 +28,27 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    @app.route('/', methods = ['GET', 'POST'])
+    def login():
+        curr_year = time.strftime("%Y")
+        file_name = "KeoghsPort" + curr_year + ".txt"
+        log_files_dir = os.path.join(app.static_folder, 'log_files')
+        log_file_path = os.path.join(log_files_dir, file_name)
+        
+        if request.method == 'POST':
+            username = request.form.get('username')
+            if username:
+                if not os.path.exists(log_files_dir):
+                    os.makedirs(log_files_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                with open(log_file_path, 'a') as file:
+                    file.write(f"{timestamp} {username} signed in \n")
+                
+                return redirect(url_for('home'))
+
+        return render_template('login.html', logged_in=True)
 
     @app.route('/', methods = ['GET', 'POST'])
     def index():
@@ -37,7 +58,7 @@ def create_app(test_config=None):
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
-        
+
         return render_template('home.html', logged_in = False)
 
     @app.route('/home', methods = ['GET', 'POST'])
@@ -74,6 +95,28 @@ def create_app(test_config=None):
         filename = "KeoghsPort" + curr_year + ".txt"
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment = True)
+
+    @app.route('/logout', methods = ['GET', 'POST'])
+    def logout():
+        global closedLogFiles
+        curr_year = time.strftime("%Y")
+        file_name = "KeoghsPort" + curr_year + ".txt"
+        log_files_dir = os.path.join(app.static_folder, 'log_files')
+        log_file_path = os.path.join(log_files_dir, file_name)
+
+        if not os.path.exists(log_files_dir):
+            os.makedirs(log_files_dir)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        with open(log_file_path, 'a') as file:
+            file.write(f"{timestamp} Log File Closed \n")
+
+            #os.chmod(log_file_path, 0o444) sets the log file to read only
+
+            return redirect(url_for('home'))
+
+        return render_template('login.html', logged_in=False)
 
     @app.route('/upload', methods = ['GET', 'POST'])
     def upload():

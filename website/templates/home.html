@@ -11,7 +11,7 @@
     <header>
         <nav>
             <div class="logFile">
-                <button class="closeYear"> Close Year </button>
+                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
                 <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
             </div>
             <button class="loginButton modal-button" onclick="document.getElementById('loginModal').style.display='block'"> Log In </button> 
@@ -35,12 +35,38 @@
         </div>
     </div>
     
+    <div id = "closeYearModal" class = "modal">
+        <div class = "modalContent">
+            <p> Do you want to close the year? </p>
+            <button class = "YesCloseYear" onclick = "YesCloseYearButton()"> Yes </button>
+            <button class="NoCloseYear" onclick="document.getElementById('closeYearModal').style.display = 'none'">No</button>
+        </div>
+    </div>
+
     <script>
         window.onclick = function(event) {
             if (event.target == document.getElementById('loginModal')) {
                 document.getElementById('loginModal').style.display = "none";
             }
         }
+    </script>
+
+    <script>
+        function YesCloseYearButton(){
+            fetch('/logout', {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({action: "Log Closed"})
+            });
+            window.location.href = '/';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('closeYearModal')) {
+                document.getElementById('closeYearModal').style.display = "none";
+            }
+        }
+
     </script>
 </body>
 </html>

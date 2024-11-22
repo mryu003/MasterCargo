@@ -177,3 +177,21 @@ nav {
     font-weight: bold;
 }
 
+.confirmButton, .cancelButton{
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 20px;
+    background-color: #9b9494;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.confirmButton:hover {
+    background-color: #8a8383;
+}
+
+.cancelButton:hover {
+    background-color: #8a8383;
+}
