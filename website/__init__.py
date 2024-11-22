@@ -1,6 +1,7 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, session
 import time
 import os
+import json
 from datetime import datetime
 
 MANIFEST_FOLDER = './manifests'
@@ -60,9 +61,32 @@ def create_app(test_config=None):
 
         return render_template('home.html', logged_in=True)
 
-    @app.route('/load')
+
+    @app.route('/load', methods=['GET', 'POST'])
     def load():
-        return render_template('load.html')
+        #if loaded items doesnt exist then intialize as empty 
+        if 'loaded_items' not in session:
+            session['loaded_items'] = []
+
+        if request.method == 'POST':
+        # Get the submitted items from the form 
+            items = request.form.get('items')
+            if items:
+                try:
+                # Convert JSON string -> Python list
+                    new_items = json.loads(items)
+                # update session with the new list of items 
+                    session['loaded_items'] = new_items
+                    print("Session data after POST:", session['loaded_items'])
+                except json.JSONDecodeError:
+                    return "Invalid items data", 400
+
+            # Redirect to the balance page after data processes 
+            return redirect(url_for('balance'))
+
+        print("Session data on GET:", session.get('loaded_items', []))
+        return render_template('load.html', loaded_items=session['loaded_items'])
+
 
     @app.route('/balance')
     def balance():
