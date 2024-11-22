@@ -1,5 +1,4 @@
 from flask import Flask, render_template, send_from_directory, request, redirect, url_for
-import time
 import os
 from datetime import datetime
 from pytz import timezone
@@ -39,8 +38,8 @@ def create_app(test_config=None):
 
     @app.route('/', methods = ['GET', 'POST'])
     def index():
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
@@ -53,8 +52,8 @@ def create_app(test_config=None):
 
     @app.route('/home', methods = ['GET', 'POST'])
     def home():
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
         if request.method == 'POST':
             username = request.form.get('username')
@@ -65,7 +64,7 @@ def create_app(test_config=None):
                 timestamp = get_pst_time()
 
                 with open(log_file_path, 'a') as file:
-                    file.write(f"{timestamp} {username} signed in \n")
+                    file.write(f"{timestamp}\t{username} signed in \n")
                 
                 return redirect(url_for('home'))
 
@@ -81,8 +80,8 @@ def create_app(test_config=None):
 
     @app.route('/download')
     def download_log():
-        curr_year = time.strftime("%Y")
-        filename = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        filename = f"KeoghsPort{curr_year}.txt"
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment = True)
 
