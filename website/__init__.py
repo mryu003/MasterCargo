@@ -1,4 +1,5 @@
-from flask import Flask, render_template, send_from_directory, safe_join, request, redirect, url_for
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, jsonify
+from werkzeug.utils import safe_join
 import time
 import os
 from datetime import datetime
@@ -12,50 +13,41 @@ def create_app(test_config=None):
 
     app.config.from_mapping(
         SECRET_KEY='dev',
-    ) 
-
-    app.config['MANIFEST_FOLDER'] = MANIFEST_FOLDER
-    app.config['LOG_FOLDER'] = LOG_FOLDER
+        MANIFEST_FOLDER=MANIFEST_FOLDER,
+        LOG_FOLDER=LOG_FOLDER
+    )
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
     else:
         app.config.from_mapping(test_config)
 
-    try:
-        os.makedirs(MANIFEST_FOLDER)
-        os.makedirs(LOG_FOLDER)
-    except OSError:
-        pass
+    os.makedirs(app.config['MANIFEST_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['LOG_FOLDER'], exist_ok=True)
 
-
-    @app.route('/', methods = ['GET', 'POST'])
+    @app.route('/', methods=['GET', 'POST'])
     def index():
         curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
-        
-        return render_template('home.html', logged_in = False)
 
-    @app.route('/home', methods = ['GET', 'POST'])
+        return render_template('home.html', logged_in=False)
+
+    @app.route('/home', methods=['GET', 'POST'])
     def home():
         curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
         if request.method == 'POST':
             username = request.form.get('username')
             if username:
-                if not os.path.exists(LOG_FOLDER):
-                    os.makedirs(LOG_FOLDER)
-
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                 with open(log_file_path, 'a') as file:
-                    file.write(f"{timestamp} {username} signed in \n")
-                
+                    file.write(f"{timestamp} {username} signed in\n")
+
                 return redirect(url_for('home'))
 
         return render_template('home.html', logged_in=True)
@@ -71,45 +63,38 @@ def create_app(test_config=None):
     @app.route('/download')
     def download_log():
         curr_year = time.strftime("%Y")
-        filename = "KeoghsPort" + curr_year + ".txt"
-        log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
-        return send_from_directory(log_file_dir, filename, as_attachment = True)
+        filename = f"KeoghsPort{curr_year}.txt"
+        return send_from_directory(app.config['LOG_FOLDER'], filename, as_attachment=True)
 
     @app.route('/download/<filename>')
     def download_manifest(filename):
-        # Ensure the filename is safe and comes from the 'manifests' directory
-        manifests_path = safe_join(app.static_folder, 'manifests')
-        return send_from_directory(directory=manifests_path, path=filename, as_attachment=True)
+        manifests_path = app.config['MANIFEST_FOLDER']
+        safe_path = safe_join(manifests_path, filename)
+        return send_from_directory(directory=manifests_path, path=safe_path, as_attachment=True)
 
-    @app.route('/upload', methods = ['GET', 'POST'])
+    @app.route('/upload', methods=['GET', 'POST'])
     def upload():
         next_page = request.args.get('next', 'home')
-        
-        if request.method == 'POST':
-            if 'fileUpload' in request.files:
-                file = request.files['fileUpload']
-                if file:
-                    filename = file.filename
-                    original_file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
-                    file.save(original_file_path)
 
-                    modified_filename = filename.replace('.txt', 'OUTBOUND.txt')
-                    modified_file_path = os.path.join(app.config['MANIFEST_FOLDER'], modified_filename)
+        if request.method == 'POST' and 'fileUpload' in request.files:
+            file = request.files['fileUpload']
+            if file:
+                filename = file.filename
+                original_file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
+                file.save(original_file_path)
 
-                    with open(original_file_path, 'r') as file:
-                        content = file.read()
+                modified_filename = filename.replace('.txt', 'OUTBOUND.txt')
+                modified_file_path = os.path.join(app.config['MANIFEST_FOLDER'], modified_filename)
 
-                    modified_content = content
-                    
-                    with open(modified_file_path, 'w') as file:
-                        file.write(modified_content)
+                with open(original_file_path, 'r') as original_file:
+                    content = original_file.read()
 
-                    if next_page == 'load':
-                        return redirect(url_for('load'))
-                    elif next_page == 'balance':
-                        return redirect(url_for('balance'))
-        
-        return render_template('upload.html', next_page = next_page)
+                with open(modified_file_path, 'w') as modified_file:
+                    modified_file.write(content)
+
+                return redirect(url_for(next_page))
+
+        return render_template('upload.html', next_page=next_page)
 
     @app.route('/add_note', methods=['POST'])
     def add_note():
@@ -121,17 +106,17 @@ def create_app(test_config=None):
 
         curr_year = time.strftime("%Y")
         file_name = f"KeoghsPort{curr_year}.txt"
-        log_files_path = os.path.join(app.static_folder, 'log_files')
-        os.makedirs(log_files_path, exist_ok=True)  # Ensure the directory exists
-
-        file_path = os.path.join(log_files_path, file_name)
+        file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         try:
             with open(file_path, 'a') as log_file:
                 log_file.write(note + '\n')
             return jsonify({"message": "Note added successfully"}), 200
         except Exception as e:
-            print(f"Error writing note: {e}")
-            return jsonify({"error": "Failed to add note"}), 500
-            
+            return jsonify({"error": f"Failed to add note: {e}"}), 500
+
     return app
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(debug=True)
