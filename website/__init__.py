@@ -1,11 +1,18 @@
 from flask import Flask, render_template, send_from_directory, request, redirect, url_for
-import time
 import os
 from datetime import datetime
+from pytz import timezone
 
 MANIFEST_FOLDER = './manifests'
 LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
+
+def get_pst_time():
+    pst = timezone('US/Pacific')
+    now = datetime.now(pst)
+    floored_time = now.replace(second = 0, microsecond = 0)
+    return floored_time.strftime('%Y-%m-%d %H:%M')
+
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -31,19 +38,22 @@ def create_app(test_config=None):
 
     @app.route('/', methods = ['GET', 'POST'])
     def index():
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
         
-        return render_template('home.html', logged_in = False)
+        if request.method == 'POST':
+            return home()
+        
+        return render_template('signin.html')
 
     @app.route('/home', methods = ['GET', 'POST'])
     def home():
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
         if request.method == 'POST':
             username = request.form.get('username')
@@ -51,10 +61,10 @@ def create_app(test_config=None):
                 if not os.path.exists(LOG_FOLDER):
                     os.makedirs(LOG_FOLDER)
 
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = get_pst_time()
 
                 with open(log_file_path, 'a') as file:
-                    file.write(f"{timestamp} {username} signed in \n")
+                    file.write(f"{timestamp}\t{username} signed in \n")
                 
                 return redirect(url_for('home'))
 
@@ -70,8 +80,8 @@ def create_app(test_config=None):
 
     @app.route('/download')
     def download_log():
-        curr_year = time.strftime("%Y")
-        filename = "KeoghsPort" + curr_year + ".txt"
+        curr_year = datetime.now().year
+        filename = f"KeoghsPort{curr_year}.txt"
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment = True)
 
