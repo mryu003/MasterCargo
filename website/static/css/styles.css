@@ -177,3 +177,7 @@ nav {
     font-weight: bold;
 }
 
+.itemAboveBox{
+    height: 100px;
+    width: 100%;
+}
