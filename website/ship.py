@@ -8,6 +8,8 @@ SHIP_IN_OUT = [8, 0]
 TRUCK = [0, 0]
 UNUSED = 'UNUSED'
 NAN = 'NAN'
+LOAD = 'LOAD'
+UNLOAD = 'UNLOAD'
 
 class Container:
     def __init__(self, name, weight):
@@ -43,7 +45,8 @@ class Ship:
         steps = []
         for x, y in unload_containers:
             time = self.__unload_time([x, y])
-            steps.append({"name": self.ship_grid[x][y].name, 
+            steps.append({"op": UNLOAD,
+                          "name": self.ship_grid[x][y].name, 
                           "from_name": "SHIP",
                           "from_pos": [x, y],
                           "to_name": "TRUCK",
@@ -51,7 +54,29 @@ class Ship:
                           "time": time})
             self.ship_grid[x][y] = Container(UNUSED, 0)
 
+        for container in load_containers:
+            free_loc = self.__get_free_location()
+            if free_loc:
+                time = self.__manhattan_distance(SHIP_IN_OUT, free_loc)
+                steps.append({"op": LOAD,
+                              "name": container.get("name"),
+                              "weight": container.get("weight"),
+                              "from_name": "TRUCK",
+                              "from_pos": TRUCK,
+                              "to_name": "SHIP",
+                              "to_pos": free_loc,
+                              "time": time})
+                self.ship_grid[free_loc[0]][free_loc[1]] = Container(container.get("name"), container.get("weight"))
+
         return steps
+    
+    def __get_free_location(self) -> list:
+        for col in range(MAX_COL):
+            for row in range(MAX_ROW):
+                if self.ship_grid[row][col].name == UNUSED:
+                    return [row, col]
+                
+        return None
     
     def has_space(self, load_containers: list, unload_containers: list) -> bool:
         curr_free_space = self.__get_free_space()
