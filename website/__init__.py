@@ -85,6 +85,7 @@ def create_app(test_config=None):
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment = True)
 
+
     @app.route('/upload', methods = ['GET', 'POST'])
     def upload():
         next_page = request.args.get('next', 'home')
@@ -114,4 +115,24 @@ def create_app(test_config=None):
                         return redirect(url_for('balance'))
         
         return render_template('upload.html', next_page = next_page)
+    
+    @app.route('/logout', methods=['POST'])
+    def logout():
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
+        if not os.path.exists(app.config['LOG_FOLDER']):
+            os.makedirs(app.config['LOG_FOLDER'])
+
+        timestamp = get_pst_time()
+
+        with open(log_file_path, 'a') as file:
+            file.write(f"{timestamp}    Log File Closed\n")
+
+        # Make the log file read-only
+        #os.chmod(log_file_path, stat.S_IREAD)
+
+        return redirect(url_for('index'))
+
     return app
