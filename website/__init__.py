@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, session
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, make_response, session
 import time
 import os
 import json
@@ -13,7 +13,7 @@ def create_app(test_config=None):
 
     app.config.from_mapping(
         SECRET_KEY='dev',
-    ) 
+    )
 
     app.config['MANIFEST_FOLDER'] = MANIFEST_FOLDER
     app.config['LOG_FOLDER'] = LOG_FOLDER
@@ -29,9 +29,13 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-
-    @app.route('/', methods = ['GET', 'POST'])
+    @app.route('/', methods=['GET', 'POST'])
     def index():
+        #Last visited page - added to cookie. Repeated for each new page
+        resp = make_response(render_template('home.html', logged_in=False))
+        resp.set_cookie('last_visited', 'index')  
+        session['last_visited'] = 'index'  
+        
         curr_year = time.strftime("%Y")
         file_name = "KeoghsPort" + curr_year + ".txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
@@ -39,13 +43,18 @@ def create_app(test_config=None):
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
         
-        return render_template('home.html', logged_in = False)
+        return resp
 
-    @app.route('/home', methods = ['GET', 'POST'])
+    @app.route('/home', methods=['GET', 'POST'])
     def home():
+        resp = make_response(render_template('home.html', logged_in=True))
+        resp.set_cookie('last_visited', 'home')  
+        session['last_visited'] = 'home' 
+        
         curr_year = time.strftime("%Y")
         file_name = "KeoghsPort" + curr_year + ".txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
         if request.method == 'POST':
             username = request.form.get('username')
             if username:
@@ -59,49 +68,58 @@ def create_app(test_config=None):
                 
                 return redirect(url_for('home'))
 
-        return render_template('home.html', logged_in=True)
+        # Get ast visited page from cookie and session and display 
+        last_visited_cookie = request.cookies.get('last_visited', 'None')
+        last_visited_session = session.get('last_visited', 'None')
 
+        resp.set_cookie('last_visited', 'home')  
+        return resp
 
     @app.route('/load', methods=['GET', 'POST'])
     def load():
-        #if loaded items doesnt exist then intialize as empty 
+        resp = make_response(render_template('load.html', loaded_items=[]))
+        resp.set_cookie('last_visited', 'load') 
+        session['last_visited'] = 'load' 
+        
         if 'loaded_items' not in session:
             session['loaded_items'] = []
 
         if request.method == 'POST':
-        # Get the submitted items from the form 
             items = request.form.get('items')
             if items:
                 try:
-                # Convert JSON string -> Python list
                     new_items = json.loads(items)
-                # update session with the new list of items 
                     session['loaded_items'] = new_items
                     print("Session data after POST:", session['loaded_items'])
                 except json.JSONDecodeError:
                     return "Invalid items data", 400
 
-            # Redirect to the balance page after data processes 
             return redirect(url_for('balance'))
 
         print("Session data on GET:", session.get('loaded_items', []))
-        return render_template('load.html', loaded_items=session['loaded_items'])
-
+        return resp
 
     @app.route('/balance')
     def balance():
-        return render_template('balance.html')
+        resp = make_response(render_template('balance.html'))
+        resp.set_cookie('last_visited', 'balance') 
+        session['last_visited'] = 'balance'  
+        return resp
 
     @app.route('/download')
     def download_log():
         curr_year = time.strftime("%Y")
         filename = "KeoghsPort" + curr_year + ".txt"
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
-        return send_from_directory(log_file_dir, filename, as_attachment = True)
+        return send_from_directory(log_file_dir, filename, as_attachment=True)
 
-    @app.route('/upload', methods = ['GET', 'POST'])
+    @app.route('/upload', methods=['GET', 'POST'])
     def upload():
         next_page = request.args.get('next', 'home')
+
+        resp = make_response(render_template('upload.html', next_page=next_page))
+        resp.set_cookie('last_visited', 'upload')  
+        session['last_visited'] = 'upload' 
         
         if request.method == 'POST':
             if 'fileUpload' in request.files:
@@ -127,5 +145,6 @@ def create_app(test_config=None):
                     elif next_page == 'balance':
                         return redirect(url_for('balance'))
         
-        return render_template('upload.html', next_page = next_page)
+        return resp
+
     return app
