@@ -12,7 +12,11 @@
                 <button class="closeYear">Close Year</button>
                 <button class="downloadLog" onclick="location.href='/download'">Log File</button>
             </div>
+
             <button class="loginButton modal-button" onclick="document.getElementById('loginModal').style.display='block'">Log In</button>
+
+            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+
         </nav>
     </header>
 
@@ -21,14 +25,14 @@
         <button class="homeButton" onclick="location.href='/upload?next=balance'">Balance Ship</button>
     </div>
 
-    <div id="loginModal" class="modal">
-        <div class="modalContent">
-            <span class="close" onclick="document.getElementById('loginModal').style.display='none'">&times;</span>
-            <h2>Sign In</h2>
-            <form method="POST" action="/home">
-                <label for="username">Enter Your Name:</label>
-                <input type="text" name="username" class="usernameInput" required>
-                <button type="submit" class="signinButton">Sign In</button>
+    <div id = "signInModal" class = "modal">
+        <div class = "modalContent">
+            <span class = "close" onclick = "document.getElementById('signInModal').style.display='none'"> &times;</span>
+            <h2> Sign In </h2>
+            <form method = "POST" action = "/home">
+                <label for = "username"> Enter Your Name: </label>
+                <input type = "text" name = "username" class = "usernameInput" required>
+
             </form>
         </div>
     </div>
@@ -36,8 +40,8 @@
 
     <script>
         window.onclick = function(event) {
-            if (event.target == document.getElementById('loginModal')) {
-                document.getElementById('loginModal').style.display = "none";
+            if (event.target == document.getElementById('signInModal')) {
+                document.getElementById('signInModal').style.display = "none";
             }
         }
     </script>
