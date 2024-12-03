@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unload Containers</title>
+    <style>
+        .container-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px;
+        }
+        .container-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .container-item.selected {
+            background-color: #d1ffd1;
+        }
+        button {
+            margin: 20px;
+            padding: 10px 20px;
+        }
+    </style>
+    <script>
+        function toggleSelection(event) {
+            const item = event.target;
+            item.classList.toggle('selected');
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+        }
+    </script>
+</head>
+<body>
+    <h1>Unload Containers</h1>
+    <form method="POST">
+        <div class="container-grid">
+            {% for container in containers %}
+            <div class="container-item" onclick="toggleSelection(event)">
+                <label>
+                    <input type="checkbox" name="container" value="{{ container }}" style="display: none;">
+                    {{ container }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="submit">Unload Selected Containers</button>
+    </form>
+</body>
+</html>
