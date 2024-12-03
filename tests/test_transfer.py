@@ -1,6 +1,6 @@
 from website.classes import Ship, Container, get_ship_grid
 
-def test_unload_only():
+def test_unload_only_1():
     # TODO: Add step information: locations, time, etc.
 
     file_path = './tests/ship_cases/ShipCase1.txt'
@@ -17,7 +17,7 @@ def test_unload_only():
     assert steps[0].time == 9
     assert steps[0].ship_grid[0][1].name == 'UNUSED'
 
-def test_load_only():
+def test_load_only_2():
     file_path = './tests/ship_cases/ShipCase2.txt'
     ship_grid = get_ship_grid(file_path)
     bat_container = Container('Bat', 431)
@@ -48,4 +48,19 @@ def test_load_unload_3():
     assert steps[3].ship_grid[0][1].name == 'UNUSED'
     assert steps[3].ship_grid[1][1].name == 'UNUSED'
     assert steps[3].ship_grid[1][2].name == 'Doe'
+
+def test_load_unload_4():
+    file_path = './tests/ship_cases/ShipCase4.txt'
+    ship_grid = get_ship_grid(file_path)
+    nat_container = Container('Nat', 2543)
+    load_containers = [nat_container]
+    unload_containers = [[6, 4]]
+
+    ship = Ship(ship_grid)
+    steps = ship.get_transfer_steps(load_containers, unload_containers)
+
+    assert len(steps) == 3
+    assert not steps[2].ship_grid[2][0].name == 'UNUSED'
+    assert steps[2].ship_grid[6][4].name == 'UNUSED'
+    assert steps[2].ship_grid[7][4].name == 'UNUSED'
 

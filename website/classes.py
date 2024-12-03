@@ -138,17 +138,21 @@ class Transfer(Node):
 
     
     def move_top_container(self, source: list) -> list:
-        left = source[1] - 1
-        right = source[1] + 1
-        while left >= 0 or right < MAX_COL:
-            if left >= 0 and self.ship_grid[source[0]][left].name == UNUSED:
-                cost = manhattan_distance(source, [source[0], left])
-                return [cost, source[0], left]
-            if right < MAX_COL and self.ship_grid[source[0]][right].name == UNUSED:
-                cost = manhattan_distance(source, [source[0], right])
-                return [cost, source[0], right]
-            left -= 1
-            right += 1
+        # use bfs to find a cell that is UNUSED
+        queue = [source]
+        visited = set()
+
+        while queue:
+            curr = queue.pop(0)
+            visited.add(tuple(curr))
+            if self.ship_grid[curr[0]][curr[1]].name == UNUSED and self.ship_grid[curr[0] - 1][curr[1]].name != UNUSED:
+                return [manhattan_distance(source, curr), curr[0], curr[1]]
+            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                new_x, new_y = curr[0] + dx, curr[1] + dy
+                if 0 <= new_x < MAX_ROW and 0 <= new_y < MAX_COL and (new_x, new_y) not in visited:
+                    queue.append([new_x, new_y])
+
+        return None
     
     def __get_free_location(self) -> list:
         for col in range(MAX_COL):
