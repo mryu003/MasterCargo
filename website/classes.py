@@ -1,4 +1,5 @@
 import re
+import copy
 
 MAX_ROW = 8
 MAX_COL = 12
@@ -9,6 +10,8 @@ UNUSED = 'UNUSED'
 NAN = 'NAN'
 LOAD = 'LOAD'
 UNLOAD = 'UNLOAD'
+MOVE = 'MOVE'
+START = 'START'
 
 
 def get_ship_grid(file_path: str) -> list:
@@ -40,44 +43,184 @@ class Node:
         self.time = time
 
 class Transfer(Node):
-    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int):
+    def __init__(self, 
+                 op: str, 
+                 name: str, 
+                 weight: int, 
+                 from_pos: list, 
+                 to_pos: list, 
+                 time: int,
+                 ship_grid: list,
+                 load_containers: list,
+                 unload_containers: list,
+                 fval: int,
+                 step: int):
         super().__init__(op, name, weight, from_pos, to_pos, time)
-
-
-class Ship:
-    def __init__(self, ship_grid: list):
         self.ship_grid = ship_grid
+        self.load_containers = load_containers
+        self.unload_containers = unload_containers
+        self.fval = fval
+        self.step = step
 
-    def get_transfer_steps(self, load_containers: list, unload_containers: list) -> list:
-        if not self.has_space(load_containers, unload_containers):
-            return None
-        
-        steps = []
-        for x, y in unload_containers:
-            time = self.__unload_time([x, y])
-            steps.append(Transfer(
-                                UNLOAD, 
-                                self.ship_grid[x][y].name, 
-                                self.ship_grid[x][y].weight, 
-                                [x, y], 
-                                TRUCK, 
-                                time))
-            self.ship_grid[x][y] = Container(UNUSED, 0)
+    def generate_children(self):
+        children = []
+        for x, y in self.unload_containers:
+            if self.ship_grid[x + 1][y].name != UNUSED:
+                top_x, top_y = self.find_top_container([x, y])
+                time, new_loc_x, new_loc_y = self.move_top_container([top_x, top_y])
+                new_ship_grid = copy.deepcopy(self.ship_grid)
+                new_ship_grid[new_loc_x][new_loc_y] = self.ship_grid[top_x][top_y]
+                new_ship_grid[top_x][top_y] = Container(UNUSED, 0)
 
-        for container in load_containers:
+                children.append(Transfer(
+                                    MOVE, 
+                                    self.ship_grid[top_x][top_y].name, 
+                                    self.ship_grid[top_x][top_y].weight, 
+                                    [top_x, top_y], 
+                                    [new_loc_x, new_loc_y], 
+                                    time,
+                                    new_ship_grid,
+                                    self.load_containers,
+                                    self.unload_containers,
+                                    0,
+                                    self.step + 1
+                                    ))
+            else:
+                time = self.__unload_time([x, y])
+                new_ship_grid = copy.deepcopy(self.ship_grid)
+                new_ship_grid[x][y] = Container(UNUSED, 0)
+                new_unload_containers = copy.deepcopy(self.unload_containers)
+                new_unload_containers.remove([x, y])
+                children.append(Transfer(
+                                    UNLOAD, 
+                                    self.ship_grid[x][y].name, 
+                                    self.ship_grid[x][y].weight, 
+                                    [x, y], 
+                                    TRUCK, 
+                                    time,
+                                    new_ship_grid,
+                                    self.load_containers,
+                                    new_unload_containers,
+                                    0,
+                                    self.step + 1
+                                    ))
+
+        for container in self.load_containers:
             free_loc = self.__get_free_location()
             if free_loc:
                 time = self.__load_time(free_loc)
-                steps.append(Transfer(
+                new_ship_grid = copy.deepcopy(self.ship_grid)
+                new_ship_grid[free_loc[0]][free_loc[1]] = Container(container.name, container.weight)
+                new_load_containers = copy.deepcopy(self.load_containers)
+                new_load_containers.pop(0)
+                children.append(Transfer(
                                     LOAD, 
                                     container.name, 
                                     container.weight, 
                                     TRUCK, 
                                     free_loc, 
-                                    time))
-                self.ship_grid[free_loc[0]][free_loc[1]] = Container(container.name, container.weight)
+                                    time,
+                                    new_ship_grid,
+                                    new_load_containers,
+                                    self.unload_containers,
+                                    0,
+                                    self.step + 1))
 
-        return steps
+        return children
+    
+    def find_top_container(self, source: list) -> list:
+        top_x = source[0]
+        while top_x < MAX_ROW and self.ship_grid[top_x][source[1]].name != UNUSED:
+            if top_x == MAX_ROW - 1:
+                return [top_x, source[1]]
+            top_x += 1
+        return [top_x - 1, source[1]]
+
+    
+    def move_top_container(self, source: list) -> list:
+        left = source[1] - 1
+        right = source[1] + 1
+        while left >= 0 or right < MAX_COL:
+            if left >= 0 and self.ship_grid[source[0]][left].name == UNUSED:
+                cost = manhattan_distance(source, [source[0], left])
+                return [cost, source[0], left]
+            if right < MAX_COL and self.ship_grid[source[0]][right].name == UNUSED:
+                cost = manhattan_distance(source, [source[0], right])
+                return [cost, source[0], right]
+            left -= 1
+            right += 1
+    
+    def __get_free_location(self) -> list:
+        for col in range(MAX_COL):
+            for row in range(MAX_ROW):
+                if self.ship_grid[row][col].name == UNUSED:
+                    return [row, col]
+                
+        return None
+    
+    def __unload_time(self, source: list) -> int:
+        return manhattan_distance(source, SHIP_IN_OUT)
+    
+    def __load_time(self, dest: list) -> int:
+        return manhattan_distance(SHIP_IN_OUT, dest)
+    
+
+
+class Ship:
+    def __init__(self, ship_grid: list):
+        self.ship_grid = ship_grid
+        self.open_set = []
+        self.closed_set = []
+
+    def get_transfer_steps(self, load_containers: list, unload_containers: list) -> list:
+        if not self.has_space(load_containers, unload_containers):
+            return None
+        
+        start = self.ship_grid
+        goal = 0
+        came_from = {}
+
+        start_node = Transfer(
+            START, 
+            NAN, 
+            0, 
+            TRUCK, 
+            TRUCK, 
+            0,
+            start,
+            load_containers,
+            unload_containers,
+            0,
+            0
+        )
+
+        self.open_set.append(start_node)
+
+        while self.open_set:
+            self.open_set.sort(key=lambda x: x.fval)
+            curr_node = self.open_set.pop(0)
+            curr_node.fval = curr_node.step + curr_node.time
+            self.closed_set.append(curr_node)
+
+            curr_goal = len(curr_node.load_containers) + len(curr_node.unload_containers)
+            if curr_goal == goal:
+                return self.__get_path(came_from, curr_node)
+            
+            children = curr_node.generate_children()
+            for child in children:
+                if child in self.closed_set:
+                    continue
+                self.open_set.append(child)
+                came_from[child] = curr_node
+
+        return None
+
+    def __get_path(self, came_from: dict, curr_node: Transfer) -> list:
+        path = []
+        while curr_node.op != START:
+            path.append(curr_node)
+            curr_node = came_from[curr_node]
+        return path[::-1]
     
     def __get_free_location(self) -> list:
         for col in range(MAX_COL):

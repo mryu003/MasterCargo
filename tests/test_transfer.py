@@ -15,7 +15,7 @@ def test_unload_only():
     assert steps[0].weight == 99
     assert steps[0].from_pos == [0, 1]
     assert steps[0].time == 9
-    assert ship.ship_grid[0][1].name == 'UNUSED'
+    assert steps[0].ship_grid[0][1].name == 'UNUSED'
 
 def test_load_only():
     file_path = './tests/ship_cases/ShipCase2.txt'
@@ -29,4 +29,23 @@ def test_load_only():
 
     assert steps[0].name == "Bat"
     assert steps[0].weight == 431
-    assert ship.ship_grid[3][0].name == "Bat"
+    assert steps[0].ship_grid[3][0].name == "Bat"
+
+def test_load_unload_3():
+    file_path = './tests/ship_cases/ShipCase3.txt'
+    ship_grid = get_ship_grid(file_path)
+    bat_container = Container('Bat', 532)
+    rat_container = Container('Rat', 6317)
+    load_containers = [bat_container, rat_container]
+    unload_containers = [[0, 1]]
+
+    ship = Ship(ship_grid)
+    steps = ship.get_transfer_steps(load_containers, unload_containers)
+
+    assert len(steps) == 4
+    assert not steps[3].ship_grid[2][0].name == 'UNUSED'
+    assert not steps[3].ship_grid[3][0].name == 'UNUSED'
+    assert steps[3].ship_grid[0][1].name == 'UNUSED'
+    assert steps[3].ship_grid[1][1].name == 'UNUSED'
+    assert steps[3].ship_grid[1][2].name == 'Doe'
+
