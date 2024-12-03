@@ -122,7 +122,6 @@ def create_app(test_config=None):
 
         print("Session data on GET:", session.get('loaded_items', []))
         return resp
-
     @app.route('/balance')
     def balance():
         resp = make_response(render_template('balance.html'))
