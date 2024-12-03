@@ -1,12 +1,21 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, jsonify
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, jsonify, session
 from werkzeug.utils import safe_join
 import time
 import os
+import json
 from datetime import datetime
+from pytz import timezone
 
 MANIFEST_FOLDER = './manifests'
 LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
+
+def get_pst_time():
+    pst = timezone('US/Pacific')
+    now = datetime.now(pst)
+    floored_time = now.replace(second = 0, microsecond = 0)
+    return floored_time.strftime('%Y-%m-%d %H:%M')
+
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -27,34 +36,65 @@ def create_app(test_config=None):
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
-        curr_year = time.strftime("%Y")
+        curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
+        if request.method == 'POST':
+            return home()
+        
+        return render_template('signin.html')
 
         return render_template('home.html', logged_in=False)
 
     @app.route('/home', methods=['GET', 'POST'])
     def home():
-        curr_year = time.strftime("%Y")
+        curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
         if request.method == 'POST':
             username = request.form.get('username')
             if username:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                with open(log_file_path, 'a') as file:
-                    file.write(f"{timestamp} {username} signed in\n")
+                if not os.path.exists(LOG_FOLDER):
+                    os.makedirs(LOG_FOLDER)
 
+                timestamp = get_pst_time()
+
+                with open(log_file_path, 'a') as file:
+                    file.write(f"{timestamp}\t{username} signed in \n")
+                
                 return redirect(url_for('home'))
 
         return render_template('home.html', logged_in=True)
 
-    @app.route('/load')
+
+    @app.route('/load', methods=['GET', 'POST'])
     def load():
-        return render_template('load.html')
+        #if loaded items doesnt exist then intialize as empty 
+        if 'loaded_items' not in session:
+            session['loaded_items'] = []
+
+        if request.method == 'POST':
+        # Get the submitted items from the form 
+            items = request.form.get('items')
+            if items:
+                try:
+                # Convert JSON string -> Python list
+                    new_items = json.loads(items)
+                # update session with the new list of items 
+                    session['loaded_items'] = new_items
+                    print("Session data after POST:", session['loaded_items'])
+                except json.JSONDecodeError:
+                    return "Invalid items data", 400
+
+            # Redirect to the balance page after data processes 
+            return redirect(url_for('balance'))
+
+        print("Session data on GET:", session.get('loaded_items', []))
+        return render_template('load.html', loaded_items=session['loaded_items'])
+
 
     @app.route('/balance')
     def balance():
@@ -62,9 +102,10 @@ def create_app(test_config=None):
 
     @app.route('/download')
     def download_log():
-        curr_year = time.strftime("%Y")
+        curr_year = datetime.now().year
         filename = f"KeoghsPort{curr_year}.txt"
-        return send_from_directory(app.config['LOG_FOLDER'], filename, as_attachment=True)
+        log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
+        return send_from_directory(log_file_dir, filename, as_attachment = True)
 
     @app.route('/download/<filename>')
     def download_manifest(filename):

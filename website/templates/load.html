@@ -12,39 +12,91 @@
     </header>
 
     <div class="loginContainer">
+        <div class="itemAboveBox">
+            <p>New Item to Load:</p>
+        </div>
+
+        <!--form to input new item-->
+
         <form id="ItemForm">
             <label for="itemInput">Enter an item to load:</label>
             <input type="text" id="itemInput" class="usernameInput" placeholder="Type something..." required>
-            <button type="submit" class="loginButton">Add Item</button>
+            <button type="submit" class="signInButton">Add Item</button>
         </form>
+        
         <h2>Loaded Items:</h2>
-        <ul id="ItemList"></ul>
+        <ul id="ItemList">
+            <!-- Render existing items from session -->
+            {% for item in loaded_items %}
+                <li>
+                    {{ item }}
+                    <!-- Button to remove item -->
+                    <button type="button" class="removeButton" data-item="{{ item }}">Remove</button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!--Form that submits all items to server-->
+        <form id="SubmitForm" method="POST" action="{{ url_for('load') }}">
+            <input type="hidden" name="items" id="hiddenItems">
+            <button type="submit" class="loginButton">Submit</button>
+        </form>
     </div>
 
     <script>
-        // Array to hold items to load
+        //Add and Submit items
         const arrayOfItems = [];
 
         const itemForm = document.getElementById('ItemForm');
         const itemInput = document.getElementById('itemInput');
         const itemList = document.getElementById('ItemList');
+        const submitForm = document.getElementById('SubmitForm');
+        const hiddenItems = document.getElementById('hiddenItems');
 
-        // Waits for user to trigger the form submission 
+        // Add items to the list and display them
         itemForm.addEventListener('submit', function (event) {
             event.preventDefault();
             const newItem = itemInput.value.trim();
             if (newItem) {
                 arrayOfItems.push(newItem);
                 displayItems();
-                itemInput.value = '';
+                itemInput.value = '';  
             }
         });
 
+        // Listener for user click on Remove button - then removes it
+        itemList.addEventListener('click', function (event) {
+            if (event.target.classList.contains('removeButton')) {
+                const itemToRemove = event.target.getAttribute('data-item');
+                const itemIndex = arrayOfItems.indexOf(itemToRemove);
+                if (itemIndex > -1) {
+                    arrayOfItems.splice(itemIndex, 1);  
+                    displayItems();
+                }
+            }
+        });
+
+        submitForm.addEventListener('submit', function (event) {
+            event.preventDefault(); 
+            hiddenItems.value = JSON.stringify(arrayOfItems);
+            submitForm.submit();
+        });
+        
+
+        // Display all items - Using for debugging/can keep or delete 
         function displayItems() {
-            itemList.innerHTML = '';
-            arrayOfItems.forEach((item, index) => {
+            itemList.innerHTML = '';  
+            arrayOfItems.forEach((item) => {
                 const listItem = document.createElement('li');
                 listItem.textContent = item;
+
+                // Create a remove button for each item
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.classList.add('removeButton');
+                removeButton.setAttribute('data-item', item);
+                
+                listItem.appendChild(removeButton);
                 itemList.appendChild(listItem);
             });
         }

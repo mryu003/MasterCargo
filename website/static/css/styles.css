@@ -17,7 +17,7 @@ nav {
     font-weight: bold;
 }
 
-.loginContainer {
+.signInContainer {
     text-align: center;
 }
 
@@ -29,20 +29,20 @@ nav {
     font-size: 40px;
 }
 
-.loginButton, .closeYear, .downloadLog {
+.signInButton, .closeYear, .downloadLog {
     display: block;
     padding: 10px;
     font-size: 40px;
 }
 
-.signinButton, .loginButton, .closeYear, .downloadLog {
+.signinButton, .signInButton, .closeYear, .downloadLog {
     background-color: #9b9494;
     color: white;
     border: none;
     cursor: pointer;
 }
 
-.signinButton:hover, .loginButton:hover, .closeYear:hover, .downloadLog:hover {
+.signinButton:hover, .signInButton:hover, .closeYear:hover, .downloadLog:hover {
     background-color: #8a8383;
 }
 
@@ -177,3 +177,7 @@ nav {
     font-weight: bold;
 }
 
+.itemAboveBox{
+    height: 100px;
+    width: 100%;
+}

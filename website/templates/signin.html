@@ -3,12 +3,12 @@
 <head>
     <meta charset = "UTF-8">
     <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
-    <Title> Login Page </Title>
+    <Title> Sign In Page </Title>
     <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
 </head>
 
 <body>
-    <div class = "loginContainer">
+    <div class = "signInContainer">
         <form action = "/" method = "POST">
             <input type = "text" class = "usernameInput" placeholder = "Enter Your Name" name = "username" required>
             <button class = "signinButton" onclick = "location.href = '/home'"> Sign In </button>
