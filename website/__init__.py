@@ -97,35 +97,35 @@ def create_app(test_config=None):
 
     @app.route('/unload', methods=['GET', 'POST'])
     def unload():
-    manifest_folder = app.config['MANIFEST_FOLDER']
-    curr_year = time.strftime("%Y")
-    file_name = f"KeoghsPort{curr_year}.txt"
-    manifest_file_path = os.path.join(manifest_folder, file_name)
+        manifest_folder = app.config['MANIFEST_FOLDER']
+        curr_year = time.strftime("%Y")
+        file_name = f"KeoghsPort{curr_year}.txt"
+        manifest_file_path = os.path.join(manifest_folder, file_name)
 
-    # Ensure the manifest file exists
-    if not os.path.exists(manifest_file_path):
-        return "Manifest file not found. Please upload it first.", 404
+        # Ensure the manifest file exists
+        if not os.path.exists(manifest_file_path):
+            return "Manifest file not found. Please upload it first.", 404
 
-    containers = []
-    try:
-        # Read containers from the manifest file
-        with open(manifest_file_path, 'r') as file:
-            containers = [line.strip() for line in file if line.strip()]
-    except Exception as e:
-        return f"Error reading manifest file: {e}", 500
+        containers = []
+        try:
+            # Read containers from the manifest file
+            with open(manifest_file_path, 'r') as file:
+                containers = [line.strip() for line in file if line.strip()]
+        except Exception as e:
+            return f"Error reading manifest file: {e}", 500
 
-    if request.method == 'POST':
-        selected_containers = request.form.getlist('container')
-        if selected_containers:
-            # Process the selected containers
-            processed_containers_path = os.path.join(manifest_folder, "unloaded_containers.txt")
-            try:
-                with open(processed_containers_path, 'a') as file:
-                    for container in selected_containers:
-                        file.write(f"{container}\n")
-                return f"Successfully unloaded: {', '.join(selected_containers)}"
-            except Exception as e:
-                return f"Error saving unloaded containers: {e}", 500
+        if request.method == 'POST':
+            selected_containers = request.form.getlist('container')
+            if selected_containers:
+                # Process the selected containers
+                processed_containers_path = os.path.join(manifest_folder, "unloaded_containers.txt")
+                try:
+                    with open(processed_containers_path, 'a') as file:
+                        for container in selected_containers:
+                            file.write(f"{container}\n")
+                    return f"Successfully unloaded: {', '.join(selected_containers)}"
+                except Exception as e:
+                    return f"Error saving unloaded containers: {e}", 500
 
     # Render the unloading page with a list of containers
     return render_template('unload.html', containers=containers)
