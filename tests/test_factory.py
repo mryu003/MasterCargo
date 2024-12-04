@@ -7,4 +7,4 @@ def test_config():
 def test_log_in(client):
     response = client.get('/home')
     assert response.status_code == 200
-    assert b'Log In' in response.data
+    assert b'Sign In' in response.data
