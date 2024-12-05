@@ -45,9 +45,6 @@ def create_app(test_config=None):
         resp.set_cookie('last_visited', 'index')  
         session['last_visited'] = 'index'  
         
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
-
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
 
@@ -70,9 +67,6 @@ def create_app(test_config=None):
         resp = make_response(render_template('home.html', logged_in=True))
         resp.set_cookie('last_visited', 'home')  
         session['last_visited'] = 'home' 
-        
-        curr_year = time.strftime("%Y")
-        file_name = "KeoghsPort" + curr_year + ".txt"
 
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
