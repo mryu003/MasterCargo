@@ -1,27 +1,28 @@
 <!DOCTYPE html>
-
 <head>
-    <meta charset = "UTF-8">
-    <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
-    <Title> Home Page </Title>
-    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-
 <body>
     <header>
         <nav>
             <div class="logFile">
+
                 <button class="closeYear"> Close Year </button>
                 <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
                 <button class="downloadManifest" onclick="location.href='/download/example_manifest.txt'">Download Manifest</button>
             </div>
+
             <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+
         </nav>
     </header>
 
-    <div class = "textButton">
-        <button class = "homeButton" onclick = "location.href = '/upload?next=load'" > Load/Unload </button>
-        <button class = "homeButton" onclick = "location.href = '/upload?next=balance'"> Balance Ship</button>"
+    <div class="textButton">
+        <button class="homeButton" onclick="location.href='/upload?next=load'">Load/Unload</button>
+        <button class="homeButton" onclick="location.href='/upload?next=balance'">Balance Ship</button>
     </div>
 
     <div id = "signInModal" class = "modal">
@@ -31,7 +32,7 @@
             <form method = "POST" action = "/home">
                 <label for = "username"> Enter Your Name: </label>
                 <input type = "text" name = "username" class = "usernameInput" required>
-                <button type = "submit" class = "signinButton"> Sign In </button>
+
             </form>
         </div>
     </div>
