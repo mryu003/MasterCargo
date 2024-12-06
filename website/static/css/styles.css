@@ -158,8 +158,8 @@ nav {
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 14px;
-    color: #d1d1d1;
+    font-size: 12px;
+    color: #000;
     cursor: pointer;
 }
 
@@ -180,4 +180,24 @@ nav {
 .itemAboveBox{
     height: 100px;
     width: 100%;
+}
+
+.grid-cell.highlight {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+.grid-cell.unused {
+    background-color: #dcdcdc;
+}
+
+
+.grid-cell.nan {
+    background-color: #000;
+}
+
+.grid-cell.filled {
+    background-color: #ffeb3b;
+    color: #000;
+    font-weight: bold;
 }
