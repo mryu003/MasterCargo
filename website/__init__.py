@@ -127,8 +127,8 @@ def create_app(test_config=None):
                 except Exception as e:
                     return f"Error saving unloaded containers: {e}", 500
 
-    # Render the unloading page with a list of containers
-    return render_template('unload.html', containers=containers)
+        # Render the unloading page with a list of containers
+        return render_template('unload.html', containers=containers)
 
 
     @app.route('/balance')
