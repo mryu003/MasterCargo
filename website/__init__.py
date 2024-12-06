@@ -188,26 +188,38 @@ def create_app(test_config=None):
     @app.route('/transfer', methods=['GET', 'POST'])
     def transfer():
         steps = session.get('steps', [])
-        if not steps:
-            return "No steps available. Please upload a manifest and configure loading/unloading.", 400
-
-        current_step = int(request.form.get('current_step', 0)) if request.method == 'POST' else 0
         total_steps = len(steps)
         total_time = sum(step['time'] for step in steps)
 
-        if request.method == 'POST' and current_step < total_steps - 1:
-            current_step += 1
+        if request.method == 'POST':
+            current_step = int(request.form.get('current_step', 0)) + 1
+        else:
+            current_step = 0
+
+        if current_step > total_steps:
+            return "All steps completed."
+        
+        if current_step == 0:
+            display_grid = steps[current_step]['ship_grid'][::-1]
+        else:
+            display_grid = steps[current_step - 1]['ship_grid'][::-1]
+
+        step = steps[current_step] if current_step < total_steps else None
+
+        def adjust_position(pos):
+            return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
+
+        if step:
+            step['from_pos'] = adjust_position(step['from_pos'])
+            step['to_pos'] = adjust_position(step['to_pos'])
 
         return render_template(
             'transfer.html',
-            step=steps[current_step],
+            step=step,
             current_step=current_step,
             total_steps=total_steps,
-            total_time=total_time
+            total_time=total_time,
+            display_grid=display_grid
         )
-
-
-
-
-
+    
     return app

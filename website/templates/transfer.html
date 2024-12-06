@@ -12,37 +12,35 @@
     </header>
     <main>
         <div class="content">
-            <h2>
-                <p>Step {{ current_step + 1 }} of {{ total_steps }}: </p>
-                <p>{{ step['op'] }}</p>
-                <p>{{ step['name'] }}</p>
-                <p>from {{ step['from_pos'] }}</p>
-                <p>to {{ 'truck' if step['to_pos'] == [-1, -1] else step['to_pos'] }}</p>
-                <p>{{ step['time'] }} minutes</p>
-            </h2>
-
-            <div class="grid-container">
-                {% for row in step['ship_grid'] %}
-                    {% for cell in row %}
-                        <div 
-                            class="grid-cell 
-                                   {% if cell['name'] == 'UNUSED' %} unused 
-                                   {% elif cell['name'] == 'NAN' %} nan 
-                                   {% else %} filled {% endif %}">
-                            {{ cell['name'] }}<br>{{ cell['weight'] }}
-                        </div>
+                <div class="grid-container">
+                    {% for row in display_grid %}
+                        {% for cell in row %}
+                            <div 
+                                class="grid-cell 
+                                       {% if cell['name'] == 'UNUSED' %} unused 
+                                       {% elif cell['name'] == 'NAN' %} nan 
+                                       {% else %} filled {% endif %}">
+                                {{ cell['name'] }}<br>{{ cell['weight'] }}
+                            </div>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-            </div>
-
-            <form method="POST">
-                <input type="hidden" name="current_step" value="{{ current_step }}">
-                {% if current_step < total_steps - 1 %}
-                <button type="submit" class="next-button">Next</button>
+                </div>
+                {% if step %}
+                    <h2>
+                        {{ step['op'] }} {{ step['name'] }} 
+                        from {{ step['from_pos'] }} 
+                        to {{ step['to_pos'] }}
+                    </h2>
+                    <p>{{ step['time'] }} minutes</p>
                 {% else %}
-                <p>All steps completed.</p>
+                    <p>All steps completed.</p>
                 {% endif %}
-            </form>
+                <form method="POST">
+                    <input type="hidden" name="current_step" value="{{ current_step }}">
+                    {% if current_step < total_steps %}
+                        <button type="submit" class="next-button">Next Step</button>
+                    {% endif %}
+                </form>
         </div>
     </main>
 </body>
