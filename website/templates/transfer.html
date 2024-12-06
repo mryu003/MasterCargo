@@ -26,12 +26,9 @@
                     {% endfor %}
                 </div>
                 {% if step %}
-                    <h2>
-                        {{ step['op'] }} {{ step['name'] }} 
-                        from {{ step['from_pos'] }} 
-                        to {{ step['to_pos'] }}
-                    </h2>
-                    <p>{{ step['time'] }} minutes</p>
+                <h2>
+                    {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
+                </h2>
                 {% else %}
                     <p>All steps completed.</p>
                 {% endif %}
