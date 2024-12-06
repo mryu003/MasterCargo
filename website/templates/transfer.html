@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Steps</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="page-title">
+        <h1>Transfer Operations</h1>
+    </header>
+    <main>
+        <div class="content">
+            <h2>
+                <p>Step {{ current_step + 1 }} of {{ total_steps }}: </p>
+                <p>{{ step['op'] }}</p>
+                <p>{{ step['name'] }}</p>
+                <p>from {{ step['from_pos'] }}</p>
+                <p>to {{ 'truck' if step['to_pos'] == [-1, -1] else step['to_pos'] }}</p>
+                <p>{{ step['time'] }} minutes</p>
+            </h2>
+
+            <div class="grid-container">
+                {% for row in step['ship_grid'] %}
+                    {% for cell in row %}
+                        <div 
+                            class="grid-cell 
+                                   {% if cell['name'] == 'UNUSED' %} unused 
+                                   {% elif cell['name'] == 'NAN' %} nan 
+                                   {% else %} filled {% endif %}">
+                            {{ cell['name'] }}<br>{{ cell['weight'] }}
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="current_step" value="{{ current_step }}">
+                {% if current_step < total_steps - 1 %}
+                <button type="submit" class="next-button">Next</button>
+                {% else %}
+                <p>All steps completed.</p>
+                {% endif %}
+            </form>
+        </div>
+    </main>
+</body>
+</html>

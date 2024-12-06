@@ -95,33 +95,66 @@ def create_app(test_config=None):
 
     @app.route('/load', methods=['GET', 'POST'])
     def load():
-        resp = make_response(render_template('load.html', loaded_items=[]))
-        resp.set_cookie('last_visited', 'load') 
-        session['last_visited'] = 'load' 
-        
-        if 'loaded_items' not in session:
-            session['loaded_items'] = []
+        from website.classes import get_ship_grid, Ship, Container
+
+        resp = make_response(render_template('load.html', loaded_items=session.get('loaded_items', [])))
+        resp.set_cookie('last_visited', 'load')
+        session['last_visited'] = 'load'
+
+        manifest_path = session.get('manifest_path')
+        ship_grid = None
+        if manifest_path:
+            ship_grid = get_ship_grid(manifest_path)
 
         if request.method == 'POST':
             items = request.form.get('items')
             if items:
+                session['loaded_items'] = json.loads(items)
+
+            if ship_grid:
                 try:
-                    new_items = json.loads(items)
-                    session['loaded_items'] = new_items
-                    print("Session data after POST:", session['loaded_items'])
-                except json.JSONDecodeError:
-                    return "Invalid items data", 400
+                    ship = Ship(ship_grid)
+                    loaded_items = session.get('loaded_items', [])
+                    load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
+                    unload_containers = [[0, 1], [0, 2]] #### THIS IS TEMPORARY #####
+                    steps = ship.get_transfer_steps(load_containers, unload_containers)
+                    session['steps'] = [
+                        {
+                            'op': step.op,
+                            'name': step.name,
+                            'weight': step.weight,
+                            'from_pos': step.from_pos,
+                            'to_pos': step.to_pos,
+                            'time': step.time,
+                            'ship_grid': [
+                                [
+                                    {
+                                        'name': cell.name if cell else 'NAN',
+                                        'weight': cell.weight if cell else 0,
+                                    }
+                                    for cell in row
+                                ]
+                                for row in step.ship_grid
+                            ],
+                        }
+                        for step in steps
+                    ]
 
-            return redirect(url_for('balance'))
+                    return redirect(url_for('transfer'))
+                except Exception as e:
+                    print(f"Error processing steps: {e}")
+                    return "Error calculating transfer steps.", 400
 
-        print("Session data on GET:", session.get('loaded_items', []))
         return resp
-    @app.route('/balance')
+
+
+    @app.route('/balance', methods=['GET', 'POST'])
     def balance():
-        resp = make_response(render_template('balance.html'))
-        resp.set_cookie('last_visited', 'balance') 
-        session['last_visited'] = 'balance'  
-        return resp
+        steps = session.get('steps', [])
+        if steps:
+            for step in steps:
+                print(f"Operation: {step.op}, Name: {step.name}, From: {step.from_pos}, To: {step.to_pos}")
+        return make_response(render_template('balance.html'))
 
     @app.route('/download')
     def download_log():
@@ -134,34 +167,47 @@ def create_app(test_config=None):
     def upload():
         next_page = request.args.get('next', 'home')
 
-        resp = make_response(render_template('upload.html', next_page=next_page))
-        resp.set_cookie('last_visited', 'upload')  
-        session['last_visited'] = 'upload' 
-        
         if request.method == 'POST':
             if 'fileUpload' in request.files:
                 file = request.files['fileUpload']
                 if file:
                     filename = file.filename
-                    original_file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
-                    file.save(original_file_path)
-
-                    modified_filename = filename.replace('.txt', 'OUTBOUND.txt')
-                    modified_file_path = os.path.join(app.config['MANIFEST_FOLDER'], modified_filename)
-
-                    with open(original_file_path, 'r') as file:
-                        content = file.read()
-
-                    modified_content = content
-                    
-                    with open(modified_file_path, 'w') as file:
-                        file.write(modified_content)
-
+                    file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
+                    file.save(file_path)
+                    session['manifest_path'] = file_path
                     if next_page == 'load':
                         return redirect(url_for('load'))
                     elif next_page == 'balance':
                         return redirect(url_for('balance'))
+
+        return render_template('upload.html', next_page=next_page)
+
         
         return resp
+
+    @app.route('/transfer', methods=['GET', 'POST'])
+    def transfer():
+        steps = session.get('steps', [])
+        if not steps:
+            return "No steps available. Please upload a manifest and configure loading/unloading.", 400
+
+        current_step = int(request.form.get('current_step', 0)) if request.method == 'POST' else 0
+        total_steps = len(steps)
+        total_time = sum(step['time'] for step in steps)
+
+        if request.method == 'POST' and current_step < total_steps - 1:
+            current_step += 1
+
+        return render_template(
+            'transfer.html',
+            step=steps[current_step],
+            current_step=current_step,
+            total_steps=total_steps,
+            total_time=total_time
+        )
+
+
+
+
 
     return app
