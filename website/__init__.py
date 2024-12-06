@@ -106,6 +106,7 @@ def create_app(test_config=None):
         if not os.path.exists(manifest_file_path):
             return "Manifest file not found. Please upload it first.", 404
 
+        # Initialize containers list
         containers = []
         try:
             # Read containers from the manifest file
@@ -117,7 +118,6 @@ def create_app(test_config=None):
         if request.method == 'POST':
             selected_containers = request.form.getlist('container')
             if selected_containers:
-                # Process the selected containers
                 processed_containers_path = os.path.join(manifest_folder, "unloaded_containers.txt")
                 try:
                     with open(processed_containers_path, 'a') as file:
@@ -129,6 +129,7 @@ def create_app(test_config=None):
 
     # Render the unloading page with a list of containers
     return render_template('unload.html', containers=containers)
+
 
     @app.route('/balance')
     def balance():
