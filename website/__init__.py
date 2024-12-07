@@ -96,7 +96,6 @@ def create_app(test_config=None):
                 
                 return redirect(url_for('home'))
 
-        # Get ast visited page from cookie and session and display 
         last_visited_cookie = request.cookies.get('last_visited', 'None')
         last_visited_session = session.get('last_visited', 'None')
 
