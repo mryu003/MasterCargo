@@ -3,7 +3,6 @@ import copy
 
 MAX_ROW = 8
 MAX_COL = 12
-BUFFER_SHIP = 4
 SHIP_IN_OUT = [8, 0]
 TRUCK = [-1, -1]
 UNUSED = 'UNUSED'
@@ -143,7 +142,6 @@ class Transfer(Node):
 
     
     def move_top_container(self, source: list) -> list:
-        # use bfs to find a cell that is UNUSED
         queue = [source]
         visited = set()
 
@@ -231,14 +229,7 @@ class Ship:
             path.append(curr_node)
             curr_node = came_from[curr_node]
         return path[::-1]
-    
-    def __get_free_location(self) -> list:
-        for col in range(MAX_COL):
-            for row in range(MAX_ROW):
-                if self.ship_grid[row][col].name == UNUSED:
-                    return [row, col]
-                
-        return None
+
     
     def has_space(self, load_containers: list, unload_containers: list) -> bool:
         curr_free_space = self.__get_free_space()
@@ -253,17 +244,3 @@ class Ship:
                     free_space += 1
 
         return free_space
-    
-    def __unload_time(self, source: list) -> int:
-        return manhattan_distance(source, SHIP_IN_OUT)
-
-    def __load_time(self, dest: list) -> int:
-        return manhattan_distance(SHIP_IN_OUT, dest)
-
-    
-
-
-
-
-        
-
