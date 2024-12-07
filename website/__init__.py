@@ -106,6 +106,17 @@ def create_app(test_config=None):
         if manifest_path:
             ship_grid = get_ship_grid(manifest_path)
 
+            session['initial_grid'] = [
+                [
+                    {
+                        'name': cell.name if cell else 'NAN',
+                        'weight': cell.weight if cell else 0,
+                    }
+                    for cell in row
+                ]
+                for row in ship_grid
+            ]
+
         if request.method == 'POST':
             items = request.form.get('items')
             if items:
@@ -116,7 +127,7 @@ def create_app(test_config=None):
                     ship = Ship(ship_grid)
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
-                    unload_containers = [[0, 1], [0, 2]] #### THIS IS TEMPORARY #####
+                    unload_containers = [[0, 1], [0, 2]]  # This is temporary
                     steps = ship.get_transfer_steps(load_containers, unload_containers)
                     session['steps'] = [
                         {
@@ -209,40 +220,20 @@ def create_app(test_config=None):
         else:
             current_step = 0
 
-        if current_step > total_steps:
+        if current_step >= total_steps:
             return "All steps completed."
-        
-        if current_step == 0:
-            display_grid = steps[current_step]['ship_grid'][::-1]
-        else:
-            display_grid = steps[current_step - 1]['ship_grid'][::-1]
 
-        step = steps[current_step] if current_step < total_steps else None
+        if current_step == 0:
+            prev_grid = session.get('initial_grid')
+        else:
+            prev_grid = steps[current_step - 1]['ship_grid']
 
         def adjust_position(pos):
             return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
 
-        if step:
-            step['from_pos'] = adjust_position(step['from_pos'])
-            step['to_pos'] = adjust_position(step['to_pos'])
-
-            curr_year = datetime.now().year
-            file_name = f"KeoghsPort{curr_year}.txt"
-            log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
-
-            operation_mapping = {
-                "UNLOAD": "offloaded",
-                "MOVE": "moved",
-                "LOAD": "loaded"
-            }
-
-            operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
-            name = step['name']
-            timestamp = get_pst_time()
-
-            log_entry = f"{timestamp}\t{name} {operation}\n"
-            with open(log_file_path, 'a') as log_file:
-                log_file.write(log_entry)
+        step = steps[current_step]
+        step['from_pos'] = adjust_position(step['from_pos'])
+        step['to_pos'] = adjust_position(step['to_pos'])
 
         return render_template(
             'transfer.html',
@@ -250,7 +241,10 @@ def create_app(test_config=None):
             current_step=current_step,
             total_steps=total_steps,
             total_time=total_time,
-            display_grid=display_grid
+            grid=prev_grid[::-1]
         )
+
+
+
     
     return app
