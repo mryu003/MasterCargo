@@ -213,6 +213,24 @@ def create_app(test_config=None):
             step['from_pos'] = adjust_position(step['from_pos'])
             step['to_pos'] = adjust_position(step['to_pos'])
 
+            curr_year = datetime.now().year
+            file_name = f"KeoghsPort{curr_year}.txt"
+            log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
+            operation_mapping = {
+                "UNLOAD": "offloaded",
+                "MOVE": "moved",
+                "LOAD": "loaded"
+            }
+
+            operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
+            name = step['name']
+            timestamp = get_pst_time()
+
+            log_entry = f"{timestamp}\t{name} {operation}\n"
+            with open(log_file_path, 'a') as log_file:
+                log_file.write(log_entry)
+
         return render_template(
             'transfer.html',
             step=step,
