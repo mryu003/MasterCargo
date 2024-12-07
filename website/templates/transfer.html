@@ -13,9 +13,9 @@
     <main>
         {% if completed %}
             <div class="completed-container">
-                <a href="{{ outbound_file_path }}" class="download-button" download onclick="showConfirmation()">
+                <button class="download-button" onclick="downloadAndSaveFile()">
                     Download {{ outbound_file_name }}
-                </a>
+                </button>
             </div>
             <div id="confirmation-section" style="display: none;">
                 <div class="confirmation-container">
@@ -42,8 +42,6 @@
                     <h2>
                         {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
                     </h2>
-                {% else %}
-                    <p>All steps completed.</p>
                 {% endif %}
                 <form method="POST">
                     <input type="hidden" name="current_step" value="{{ current_step }}">
@@ -56,10 +54,49 @@
     </main>
 
     <script>
-        function showConfirmation() {
-            document.querySelector('.completed-container').style.display = 'none';
+        async function downloadAndSaveFile() {
+            try {
+                const response = await fetch("{{ outbound_file_path }}");
+                const fileContent = await response.text();
 
-            document.getElementById('confirmation-section').style.display = 'block';
+                if (window.showSaveFilePicker) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: "{{ outbound_file_name }}",
+                        types: [
+                            {
+                                description: "Text Files",
+                                accept: {
+                                    "text/plain": [".txt"]
+                                }
+                            }
+                        ]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(fileContent);
+                    await writable.close();
+
+                    alert("File saved successfully!");
+                } else {
+                    const blob = new Blob([fileContent], { type: "text/plain" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "{{ outbound_file_name }}";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    alert("File downloaded successfully!");
+                }
+
+                document.querySelector('.completed-container').style.display = 'none';
+                document.getElementById('confirmation-section').style.display = 'block';
+            } catch (error) {
+                console.error("Error downloading file:", error);
+                alert("An error occurred while downloading the file.");
+            }
         }
 
         function finishOperation() {

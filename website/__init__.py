@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, make_response, session
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, make_response, session, send_file
 import time
 import os
 import json
@@ -190,7 +190,10 @@ def create_app(test_config=None):
                     with open(file_path, 'r') as manifest_file:
                         content = manifest_file.readlines()
 
-                    container_count = len([line for line in content if line.strip()])
+                    container_count = len([
+                        line for line in content
+                        if line.strip() and not ("UNUSED" in line or "NAN" in line)
+                    ])
 
                     curr_year = datetime.now().year
                     log_file_name = f"KeoghsPort{curr_year}.txt"
@@ -207,7 +210,6 @@ def create_app(test_config=None):
                         return redirect(url_for('balance'))
 
         return render_template('upload.html', next_page=next_page)
-
 
     @app.route('/transfer', methods=['GET', 'POST'])
     def transfer():
@@ -226,7 +228,8 @@ def create_app(test_config=None):
 
         base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
         outbound_file_name = f"{base_name}OUTBOUND.txt"
-        outbound_file_path = os.path.join(os.path.dirname(manifest_path), outbound_file_name)
+        manifest_folder = os.path.dirname(manifest_path)
+        outbound_file_path = os.path.join(manifest_folder, outbound_file_name)
 
         if current_step >= total_steps:
             final_grid = steps[-1]['ship_grid']
@@ -242,7 +245,7 @@ def create_app(test_config=None):
                 'transfer.html',
                 completed=True,
                 outbound_file_name=outbound_file_name,
-                outbound_file_path=url_for('static', filename=f'outbound/{outbound_file_name}')
+                outbound_file_path=url_for('download_outbound', filename=outbound_file_name)
             )
 
         if current_step == 0:
@@ -265,13 +268,44 @@ def create_app(test_config=None):
         step['from_pos'] = adjust_position(step['from_pos'])
         step['to_pos'] = adjust_position(step['to_pos'])
 
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+        operation_mapping = {
+            "UNLOAD": "offloaded",
+            "MOVE": "moved",
+            "LOAD": "loaded"
+            }
+        operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
+        name = step['name']
+        timestamp = get_pst_time()
+        log_entry = f"{timestamp}\t{name} {operation}\n"
+        with open(log_file_path, 'a') as log_file:
+            log_file.write(log_entry)
+
         return render_template(
             'transfer.html',
             step=step,
             current_step=current_step,
             total_steps=total_steps,
             total_time=total_time,
-            grid=prev_grid[::-1]
+            grid=prev_grid[::-1],
+            completed=False
         )
-    
+
+    @app.route('/download/<filename>')
+    def download_outbound(filename):
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest path not found.", 400
+
+        manifest_folder = os.path.abspath(os.path.dirname(manifest_path))
+        file_path = os.path.join(manifest_folder, filename)
+
+        if os.path.exists(file_path):
+            return send_file(file_path, as_attachment=True)
+        else:
+            return f"File {filename} not found at {file_path}.", 404
+
+
     return app
