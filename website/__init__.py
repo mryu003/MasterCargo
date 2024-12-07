@@ -39,22 +39,32 @@ def create_app(test_config=None):
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
+        
+        # Get last visited page from the session 
+        last_visited = session.get('last_visited', request.cookies.get('last_visited'))
 
-        #Last visited page - added to cookie. Repeated for each new page
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
+        if last_visited and last_visited != 'index':
+            try:
+                print(f"Redirecting to: {last_visited}")  
+                return redirect(url_for(last_visited))
+            except Exception as e:
+                print(f"Error during redirection: {e}")
+
+        # If log file exists - redirect to home page
+        if os.path.exists(log_file_path):
+            return redirect(url_for('home'))
+
+        print("No valid last visited page found. Redirecting to index.")
         resp = make_response(render_template('home.html', logged_in=False))
         resp.set_cookie('last_visited', 'index')  
         session['last_visited'] = 'index'  
-        
-        curr_year = datetime.now().year
-        file_name = f"KeoghsPort{curr_year}.txt"
-
-        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
-
-        if os.path.exists(log_file_path):
-            return redirect(url_for('home'))
-        
-
         return resp
+
+
         if request.method == 'POST':
             return home()
         
