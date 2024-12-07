@@ -175,6 +175,21 @@ def create_app(test_config=None):
                     file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
                     file.save(file_path)
                     session['manifest_path'] = file_path
+
+                    with open(file_path, 'r') as manifest_file:
+                        content = manifest_file.readlines()
+
+                    container_count = len([line for line in content if line.strip()])
+
+                    curr_year = datetime.now().year
+                    log_file_name = f"KeoghsPort{curr_year}.txt"
+                    log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
+                    timestamp = get_pst_time()
+                    log_entry = f"{timestamp}\tManifest {filename} opened, there are {container_count} containers on board\n"
+
+                    with open(log_file_path, 'a') as log_file:
+                        log_file.write(log_entry)
+
                     if next_page == 'load':
                         return redirect(url_for('load'))
                     elif next_page == 'balance':
@@ -182,8 +197,6 @@ def create_app(test_config=None):
 
         return render_template('upload.html', next_page=next_page)
 
-        
-        return resp
 
     @app.route('/transfer', methods=['GET', 'POST'])
     def transfer():
