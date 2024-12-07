@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transfer Steps</title>
+    <title>Transfer Operations</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -11,34 +11,60 @@
         <h1>Transfer Operations</h1>
     </header>
     <main>
-        <div class="content">
-            <div class="grid-container">
-                {% for row in grid %}
-                    {% for cell in row %}
-                        <div 
-                            class="grid-cell 
-                                   {% if cell['name'] == 'UNUSED' %} unused 
-                                   {% elif cell['name'] == 'NAN' %} nan 
-                                   {% else %} filled {% endif %}">
-                            {{ cell['name'] }}<br>{{ cell['weight'] }}
-                        </div>
-                    {% endfor %}
-                {% endfor %}
+        {% if completed %}
+            <div class="completed-container">
+                <a href="{{ outbound_file_path }}" class="download-button" download onclick="showConfirmation()">
+                    Download {{ outbound_file_name }}
+                </a>
             </div>
-            {% if step %}
-                <h2>
-                    {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
-                </h2>
-            {% else %}
-                <p>All steps completed.</p>
-            {% endif %}
-            <form method="POST">
-                <input type="hidden" name="current_step" value="{{ current_step }}">
-                {% if current_step < total_steps %}
-                    <button type="submit" class="next-button">Next Step</button>
+            <div id="confirmation-section" style="display: none;">
+                <div class="confirmation-container">
+                    <h2>Did you send the manifest file?</h2>
+                    <button class="confirm-button" onclick="finishOperation()">Yes, finish operation</button>
+                </div>
+            </div>
+        {% else %}
+            <div class="content">
+                <div class="grid-container">
+                    {% for row in grid %}
+                        {% for cell in row %}
+                            <div 
+                                class="grid-cell 
+                                       {% if cell['name'] == 'UNUSED' %} unused 
+                                       {% elif cell['name'] == 'NAN' %} nan 
+                                       {% else %} filled {% endif %}">
+                                {{ cell['name'] }}<br>{{ cell['weight'] }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% if step %}
+                    <h2>
+                        {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
+                    </h2>
+                {% else %}
+                    <p>All steps completed.</p>
                 {% endif %}
-            </form>
-        </div>
+                <form method="POST">
+                    <input type="hidden" name="current_step" value="{{ current_step }}">
+                    {% if current_step < total_steps %}
+                        <button type="submit" class="next-button">Next Step</button>
+                    {% endif %}
+                </form>
+            </div>
+        {% endif %}
     </main>
+
+    <script>
+        function showConfirmation() {
+            document.querySelector('.completed-container').style.display = 'none';
+
+            document.getElementById('confirmation-section').style.display = 'block';
+        }
+
+        function finishOperation() {
+            window.location.href = "/home";
+        }
+    </script>
 </body>
 </html>

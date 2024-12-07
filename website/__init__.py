@@ -220,13 +220,43 @@ def create_app(test_config=None):
         else:
             current_step = 0
 
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest path not found.", 400
+
+        base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
+        outbound_file_name = f"{base_name}OUTBOUND.txt"
+        outbound_file_path = os.path.join(os.path.dirname(manifest_path), outbound_file_name)
+
         if current_step >= total_steps:
-            return "All steps completed."
+            final_grid = steps[-1]['ship_grid']
+            with open(outbound_file_path, 'w') as outbound_file:
+                for row_idx, row in enumerate(final_grid):
+                    for col_idx, cell in enumerate(row):
+                        outbound_file.write(
+                            f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                            f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                        )
+
+            return render_template(
+                'transfer.html',
+                completed=True,
+                outbound_file_name=outbound_file_name,
+                outbound_file_path=url_for('static', filename=f'outbound/{outbound_file_name}')
+            )
 
         if current_step == 0:
             prev_grid = session.get('initial_grid')
         else:
             prev_grid = steps[current_step - 1]['ship_grid']
+
+        with open(outbound_file_path, 'w') as outbound_file:
+            for row_idx, row in enumerate(prev_grid):
+                for col_idx, cell in enumerate(row):
+                    outbound_file.write(
+                        f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                        f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                    )
 
         def adjust_position(pos):
             return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
@@ -243,8 +273,5 @@ def create_app(test_config=None):
             total_time=total_time,
             grid=prev_grid[::-1]
         )
-
-
-
     
     return app
