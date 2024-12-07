@@ -50,12 +50,14 @@ class Transfer(Node):
                  from_pos: list, 
                  to_pos: list, 
                  time: int,
+                 prev_grid: list,
                  ship_grid: list,
                  load_containers: list,
                  unload_containers: list,
                  fval: int,
                  step: int):
         super().__init__(op, name, weight, from_pos, to_pos, time)
+        self.prev_grid = prev_grid
         self.ship_grid = ship_grid
         self.load_containers = load_containers
         self.unload_containers = unload_containers
@@ -79,6 +81,7 @@ class Transfer(Node):
                                     [top_x, top_y], 
                                     [new_loc_x, new_loc_y], 
                                     time,
+                                    self.ship_grid,
                                     new_ship_grid,
                                     self.load_containers,
                                     self.unload_containers,
@@ -98,6 +101,7 @@ class Transfer(Node):
                                     [x, y], 
                                     TRUCK, 
                                     time,
+                                    self.ship_grid,
                                     new_ship_grid,
                                     self.load_containers,
                                     new_unload_containers,
@@ -120,6 +124,7 @@ class Transfer(Node):
                                     TRUCK, 
                                     free_loc, 
                                     time,
+                                    self.ship_grid,
                                     new_ship_grid,
                                     new_load_containers,
                                     self.unload_containers,
@@ -191,6 +196,7 @@ class Ship:
             TRUCK, 
             TRUCK, 
             0,
+            start,
             start,
             load_containers,
             unload_containers,
