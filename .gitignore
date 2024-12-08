@@ -7,3 +7,4 @@ manifests/
 htmlcov
 .pytest_cache
 
+test.py

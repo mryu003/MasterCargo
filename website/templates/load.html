@@ -44,11 +44,12 @@
             <p>New Item to Load:</p>
         </div>
 
-        <!--form to input new item-->
-
+        <!-- Form to input new item -->
         <form id="ItemForm">
             <label for="itemInput">Enter an item to load:</label>
-            <input type="text" id="itemInput" class="usernameInput" placeholder="Type something..." required>
+            <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
+            <label for="weightInput">Enter weight (in kg):</label>
+            <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
             <button type="submit" class="signInButton">Add Item</button>
         </form>
         
@@ -57,14 +58,13 @@
             <!-- Render existing items from session -->
             {% for item in loaded_items %}
                 <li>
-                    {{ item }}
-                    <!-- Button to remove item -->
-                    <button type="button" class="removeButton" data-item="{{ item }}">Remove</button>
+                    {{ item.name }} - {{ item.weight }} kg
+                    <button type="button" class="removeButton" data-name="{{ item.name }}">Remove</button>
                 </li>
             {% endfor %}
         </ul>
 
-        <!--Form that submits all items to server-->
+        <!-- Form that submits all items to the server -->
         <form id="SubmitForm" method="POST" action="{{ url_for('load') }}">
             <input type="hidden" name="items" id="hiddenItems">
             <button type="submit" class="loginButton">Submit</button>
@@ -72,58 +72,67 @@
     </div>
 
     <script>
-        //Add and Submit items
+        // Array to hold items - temporarily 
         const arrayOfItems = [];
 
         const itemForm = document.getElementById('ItemForm');
         const itemInput = document.getElementById('itemInput');
+        const weightInput = document.getElementById('weightInput');
         const itemList = document.getElementById('ItemList');
         const submitForm = document.getElementById('SubmitForm');
         const hiddenItems = document.getElementById('hiddenItems');
 
-        // Add items to the list and display them
+        // Add item to the list
         itemForm.addEventListener('submit', function (event) {
             event.preventDefault();
-            const newItem = itemInput.value.trim();
-            if (newItem) {
-                arrayOfItems.push(newItem);
+            // Read input values
+            const newName = itemInput.value.trim();
+            const newWeight = parseFloat(weightInput.value);
+            // Check if the name and weight are valid
+            if (newName && !isNaN(newWeight)) {
+                arrayOfItems.push({ name: newName, weight: newWeight });
                 displayItems();
-                itemInput.value = '';  
+                itemInput.value = '';
+                weightInput.value = '';
+            } else {
+                alert("Please provide valid item name and weight!");
             }
         });
 
-        // Listener for user click on Remove button - then removes it
+        // Remove item from the list
         itemList.addEventListener('click', function (event) {
             if (event.target.classList.contains('removeButton')) {
-                const itemToRemove = event.target.getAttribute('data-item');
-                const itemIndex = arrayOfItems.indexOf(itemToRemove);
+                const itemToRemove = event.target.getAttribute('data-name');
+                const itemIndex = arrayOfItems.findIndex(item => item.name === itemToRemove);
                 if (itemIndex > -1) {
-                    arrayOfItems.splice(itemIndex, 1);  
+                    arrayOfItems.splice(itemIndex, 1);
                     displayItems();
                 }
             }
         });
 
+        // Submit items to server
         submitForm.addEventListener('submit', function (event) {
-            event.preventDefault(); 
+            event.preventDefault();
+
+            // Add items to hidden input and submit form
             hiddenItems.value = JSON.stringify(arrayOfItems);
             submitForm.submit();
         });
-        
 
-        // Display all items - Using for debugging/can keep or delete 
+        // Display items in the list
         function displayItems() {
-            itemList.innerHTML = '';  
+            itemList.innerHTML = ''; 
             arrayOfItems.forEach((item) => {
+                // Create a new list item element
                 const listItem = document.createElement('li');
-                listItem.textContent = item;
+                listItem.textContent = `${item.name} - ${item.weight} kg`;
 
-                // Create a remove button for each item
                 const removeButton = document.createElement('button');
                 removeButton.textContent = 'Remove';
                 removeButton.classList.add('removeButton');
-                removeButton.setAttribute('data-item', item);
-                
+                removeButton.setAttribute('data-name', item.name);
+
                 listItem.appendChild(removeButton);
                 itemList.appendChild(listItem);
             });
