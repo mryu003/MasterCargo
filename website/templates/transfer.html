@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Operations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header class="page-title">
+        <h1>Transfer Operations</h1>
+    </header>
+    <main>
+        {% if completed %}
+            <div class="completed-container">
+                <button class="download-button" onclick="downloadAndSaveFile()">
+                    Download {{ outbound_file_name }}
+                </button>
+            </div>
+            <div id="confirmation-section" style="display: none;">
+                <div class="confirmation-container">
+                    <h2>Did you send the manifest file?</h2>
+                    <button class="confirm-button" onclick="finishOperation()">Yes, finish operation</button>
+                </div>
+            </div>
+        {% else %}
+            <div class="content">
+                <div class="grid-container">
+                    {% for row in grid %}
+                        {% for cell in row %}
+                            <div 
+                                class="grid-cell 
+                                       {% if cell['name'] == 'UNUSED' %} unused 
+                                       {% elif cell['name'] == 'NAN' %} nan 
+                                       {% else %} filled {% endif %}">
+                                {{ cell['name'] }}<br>{{ cell['weight'] }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% if step %}
+                    <h2>
+                        {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
+                    </h2>
+                {% endif %}
+                <form method="POST">
+                    <input type="hidden" name="current_step" value="{{ current_step }}">
+                    {% if current_step < total_steps %}
+                        <button type="submit" class="next-button">Next Step</button>
+                    {% endif %}
+                </form>
+            </div>
+        {% endif %}
+    </main>
+
+    <script>
+        async function downloadAndSaveFile() {
+            try {
+                const response = await fetch("{{ outbound_file_path }}");
+                const fileContent = await response.text();
+
+                if (window.showSaveFilePicker) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: "{{ outbound_file_name }}",
+                        types: [
+                            {
+                                description: "Text Files",
+                                accept: {
+                                    "text/plain": [".txt"]
+                                }
+                            }
+                        ]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(fileContent);
+                    await writable.close();
+
+                    alert("File saved successfully!");
+                } else {
+                    const blob = new Blob([fileContent], { type: "text/plain" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "{{ outbound_file_name }}";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    alert("File downloaded successfully!");
+                }
+
+                document.querySelector('.completed-container').style.display = 'none';
+                document.getElementById('confirmation-section').style.display = 'block';
+            } catch (error) {
+                console.error("Error downloading file:", error);
+                alert("An error occurred while downloading the file.");
+            }
+        }
+
+        function finishOperation() {
+            window.location.href = "/home";
+        }
+    </script>
+</body>
+</html>

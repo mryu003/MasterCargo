@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, make_response, session
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, make_response, session, send_file
 import time
 import os
 import json
@@ -95,33 +95,77 @@ def create_app(test_config=None):
 
     @app.route('/load', methods=['GET', 'POST'])
     def load():
-        resp = make_response(render_template('load.html', loaded_items=[]))
-        resp.set_cookie('last_visited', 'load') 
-        session['last_visited'] = 'load' 
-        
-        if 'loaded_items' not in session:
-            session['loaded_items'] = []
+        from website.classes import get_ship_grid, Ship, Container
+
+        resp = make_response(render_template('load.html', loaded_items=session.get('loaded_items', [])))
+        resp.set_cookie('last_visited', 'load')
+        session['last_visited'] = 'load'
+
+        manifest_path = session.get('manifest_path')
+        ship_grid = None
+        if manifest_path:
+            ship_grid = get_ship_grid(manifest_path)
+
+            session['initial_grid'] = [
+                [
+                    {
+                        'name': cell.name if cell else 'NAN',
+                        'weight': cell.weight if cell else 0,
+                    }
+                    for cell in row
+                ]
+                for row in ship_grid
+            ]
 
         if request.method == 'POST':
             items = request.form.get('items')
             if items:
+                session['loaded_items'] = json.loads(items)
+
+            if ship_grid:
                 try:
-                    new_items = json.loads(items)
-                    session['loaded_items'] = new_items
-                    print("Session data after POST:", session['loaded_items'])
-                except json.JSONDecodeError:
-                    return "Invalid items data", 400
+                    ship = Ship(ship_grid)
+                    loaded_items = session.get('loaded_items', [])
+                    load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
+                    unload_containers = [[0, 1], [0, 2]]  # This is temporary
+                    steps = ship.get_transfer_steps(load_containers, unload_containers)
+                    session['steps'] = [
+                        {
+                            'op': step.op,
+                            'name': step.name,
+                            'weight': step.weight,
+                            'from_pos': step.from_pos,
+                            'to_pos': step.to_pos,
+                            'time': step.time,
+                            'ship_grid': [
+                                [
+                                    {
+                                        'name': cell.name if cell else 'NAN',
+                                        'weight': cell.weight if cell else 0,
+                                    }
+                                    for cell in row
+                                ]
+                                for row in step.ship_grid
+                            ],
+                        }
+                        for step in steps
+                    ]
 
-            return redirect(url_for('balance'))
+                    return redirect(url_for('transfer'))
+                except Exception as e:
+                    print(f"Error processing steps: {e}")
+                    return "Error calculating transfer steps.", 400
 
-        print("Session data on GET:", session.get('loaded_items', []))
         return resp
-    @app.route('/balance')
+
+
+    @app.route('/balance', methods=['GET', 'POST'])
     def balance():
-        resp = make_response(render_template('balance.html'))
-        resp.set_cookie('last_visited', 'balance') 
-        session['last_visited'] = 'balance'  
-        return resp
+        steps = session.get('steps', [])
+        if steps:
+            for step in steps:
+                print(f"Operation: {step.op}, Name: {step.name}, From: {step.from_pos}, To: {step.to_pos}")
+        return make_response(render_template('balance.html'))
 
     @app.route('/download')
     def download_log():
@@ -135,33 +179,135 @@ def create_app(test_config=None):
     def upload():
         next_page = request.args.get('next', 'home')
 
-        resp = make_response(render_template('upload.html', next_page=next_page))
-        resp.set_cookie('last_visited', 'upload')  
-        session['last_visited'] = 'upload' 
-        
         if request.method == 'POST':
             if 'fileUpload' in request.files:
                 file = request.files['fileUpload']
                 if file:
                     filename = file.filename
-                    original_file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
-                    file.save(original_file_path)
+                    file_path = os.path.join(app.config['MANIFEST_FOLDER'], filename)
+                    file.save(file_path)
+                    session['manifest_path'] = file_path
 
-                    modified_filename = filename.replace('.txt', 'OUTBOUND.txt')
-                    modified_file_path = os.path.join(app.config['MANIFEST_FOLDER'], modified_filename)
+                    with open(file_path, 'r') as manifest_file:
+                        content = manifest_file.readlines()
 
-                    with open(original_file_path, 'r') as file:
-                        content = file.read()
+                    container_count = len([
+                        line for line in content
+                        if line.strip() and not ("UNUSED" in line or "NAN" in line)
+                    ])
 
-                    modified_content = content
-                    
-                    with open(modified_file_path, 'w') as file:
-                        file.write(modified_content)
+                    curr_year = datetime.now().year
+                    log_file_name = f"KeoghsPort{curr_year}.txt"
+                    log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
+                    timestamp = get_pst_time()
+                    log_entry = f"{timestamp}\tManifest {filename} opened, there are {container_count} containers on board\n"
+
+                    with open(log_file_path, 'a') as log_file:
+                        log_file.write(log_entry)
 
                     if next_page == 'load':
                         return redirect(url_for('load'))
                     elif next_page == 'balance':
                         return redirect(url_for('balance'))
+
+        return render_template('upload.html', next_page=next_page)
+
+    @app.route('/transfer', methods=['GET', 'POST'])
+    def transfer():
+        steps = session.get('steps', [])
+        total_steps = len(steps)
+        total_time = sum(step['time'] for step in steps)
+
+        if request.method == 'POST':
+            current_step = int(request.form.get('current_step', 0)) + 1
+        else:
+            current_step = 0
+
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest path not found.", 400
+
+        base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
+        outbound_file_name = f"{base_name}OUTBOUND.txt"
+        manifest_folder = os.path.dirname(manifest_path)
+        outbound_file_path = os.path.join(manifest_folder, outbound_file_name)
+
+        if current_step >= total_steps:
+            final_grid = steps[-1]['ship_grid']
+            with open(outbound_file_path, 'w') as outbound_file:
+                for row_idx, row in enumerate(final_grid):
+                    for col_idx, cell in enumerate(row):
+                        outbound_file.write(
+                            f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                            f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                        )
+
+            return render_template(
+                'transfer.html',
+                completed=True,
+                outbound_file_name=outbound_file_name,
+                outbound_file_path=url_for('download_outbound', filename=outbound_file_name)
+            )
+
+        if current_step == 0:
+            prev_grid = session.get('initial_grid')
+        else:
+            prev_grid = steps[current_step - 1]['ship_grid']
+
+        with open(outbound_file_path, 'w') as outbound_file:
+            for row_idx, row in enumerate(prev_grid):
+                for col_idx, cell in enumerate(row):
+                    outbound_file.write(
+                        f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                        f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                    )
+
+        def adjust_position(pos):
+            return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
+
+        step = steps[current_step]
+        step['from_pos'] = adjust_position(step['from_pos'])
+        step['to_pos'] = adjust_position(step['to_pos'])
+
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+        operation_mapping = {
+            "UNLOAD": "offloaded",
+            "MOVE": "moved",
+            "LOAD": "loaded"
+            }
+        operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
+        name = step['name']
+        timestamp = get_pst_time()
+        log_entry = f"{timestamp}\t{name} {operation}\n"
+        with open(log_file_path, 'a') as log_file:
+            log_file.write(log_entry)
+
+        return render_template(
+            'transfer.html',
+            step=step,
+            current_step=current_step,
+            total_steps=total_steps,
+            total_time=total_time,
+            grid=prev_grid[::-1],
+            completed=False
+        )
+
+    @app.route('/download/<filename>')
+    def download_outbound(filename):
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest path not found.", 400
+
+        manifest_folder = os.path.abspath(os.path.dirname(manifest_path))
+        file_path = os.path.join(manifest_folder, filename)
+
+        if os.path.exists(file_path):
+            return send_file(file_path, as_attachment=True)
+        else:
+            return f"File {filename} not found at {file_path}.", 404
+
         
         return render_template('upload.html', next_page = next_page)
     
