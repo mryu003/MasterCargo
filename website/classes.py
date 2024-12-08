@@ -1,8 +1,11 @@
 import re
 import copy
+import heapq
 
 MAX_ROW = 8
 MAX_COL = 12
+MAX_ROW_BUFFER = 4
+MAX_COL_BUFFER = 24
 SHIP_IN_OUT = [8, 0]
 TRUCK = [-1, -1]
 UNUSED = 'UNUSED'
@@ -12,6 +15,10 @@ UNLOAD = 'UNLOAD'
 MOVE = 'MOVE'
 START = 'START'
 BALANCE_DIFF = 0.1
+BUFFER = 'BUFFER'
+SHIP = 'SHIP'
+BUFFER_IN_OUT = [5, 0]
+SHIP_BUFFER = 4
 
 
 def get_ship_grid(file_path: str) -> list:
@@ -193,9 +200,6 @@ class Transfer(Node):
         return manhattan_distance(SHIP_IN_OUT, dest)
     
     def __hash__(self):
-        return super().__hash__()
-    
-    def __hash__(self):
         return hash(str(self.from_pos[0]) + str(self.from_pos[1]) + self.name + str(self.weight) + str(self.time) + str(self.to_pos[0]) + str(self.to_pos[1]) + str(len(self.load_containers)) + str(len(self.unload_containers)) + str(self.step))
     
     def __eq__(self, other):
@@ -276,6 +280,11 @@ class Balance(Node):
         time = self.time == other.time
         return pos and name and weight and time
     
+class Sift(Node):
+    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, fval: int, step: int, buffer_grid: list, buffer_q: list):
+        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, fval, step)
+        self.buffer_grid = buffer_grid
+        self.buffer_q = buffer_q
     
 class Ship:
     def __init__(self, ship_grid: list):
@@ -350,6 +359,9 @@ class Ship:
 
         while self.open_set:
             self.open_set.sort(key=lambda x: x.fval)
+
+            if len(self.open_set) > 2000:
+                break
             
             curr_node = self.open_set.pop(0)
 
@@ -367,6 +379,121 @@ class Ship:
                 came_from[child] = curr_node
 
         return None
+    
+    def get_sift_steps(self) -> list:
+        start_grid = self.ship_grid
+        steps = []
+
+        steps += self.__buffer_moves(start_grid)
+        steps += self.__sift_moves(steps[-1])
+
+        return steps
+    
+    def __buffer_moves(self, start_grid: list) -> list:
+        start = start_grid
+        buffer_grid = [[Container(UNUSED, 0) for _ in range(MAX_COL_BUFFER)] for _ in range(MAX_ROW_BUFFER)]
+        steps = []
+
+        start_node = Sift(
+            op=START,
+            name=NAN,
+            weight=0,
+            from_pos=TRUCK,
+            to_pos=TRUCK,
+            time=0,
+            prev_grid=start,
+            ship_grid=start,
+            fval=0,
+            step=0,
+            buffer_grid=buffer_grid,
+            buffer_q=[]
+        )
+
+        steps.append(start_node)
+
+        for row in range(MAX_ROW - 1, -1, -1):
+            for col in range(MAX_COL):
+                if start[row][col].name != UNUSED and start[row][col].name != NAN:
+                    buffer_loc = self.__get_buffer_loc(steps[-1].buffer_grid, start[row][col].weight)
+                    if buffer_loc:
+                        time = manhattan_distance([row, col], SHIP_IN_OUT) + SHIP_BUFFER + manhattan_distance(BUFFER_IN_OUT, buffer_loc)
+                        new_buffer_grid = copy.deepcopy(steps[-1].buffer_grid)
+                        new_buffer_grid[buffer_loc[0]][buffer_loc[1]] = Container(start[row][col].name, start[row][col].weight)
+                        new_ship_grid = copy.deepcopy(steps[-1].ship_grid)
+                        new_ship_grid[row][col] = Container(UNUSED, 0)
+                        new_buffer_q = copy.deepcopy(steps[-1].buffer_q)
+                        heapq.heappush(new_buffer_q, (-start[row][col].weight ,buffer_loc))
+                        steps.append(Sift(
+                            op=BUFFER,
+                            name=start[row][col].name,
+                            weight=start[row][col].weight,
+                            from_pos=[row, col],
+                            to_pos=buffer_loc,
+                            time=time,
+                            prev_grid=steps[-1].ship_grid,
+                            ship_grid=new_ship_grid,
+                            buffer_grid=new_buffer_grid,
+                            buffer_q=new_buffer_q,
+                            fval=0,
+                            step=steps[-1].step + 1
+                        ))
+
+        return steps[1:]
+    
+    def __sift_moves(self, start_node: Sift) -> list:
+        steps = []
+        steps.append(start_node)
+
+        curr_buffer = start_node.buffer_q
+
+        while curr_buffer:
+            _, buffer_loc = heapq.heappop(curr_buffer)
+            new_dest = self.__get_sift_dest(steps[-1].ship_grid)
+            time = manhattan_distance(buffer_loc, BUFFER_IN_OUT) + SHIP_BUFFER + manhattan_distance(SHIP_IN_OUT, new_dest)
+            new_buffer_grid = copy.deepcopy(steps[-1].buffer_grid)
+            new_buffer_grid[buffer_loc[0]][buffer_loc[1]] = Container(UNUSED, 0)
+            new_ship_grid = copy.deepcopy(steps[-1].ship_grid)
+            new_ship_grid[new_dest[0]][new_dest[1]] = Container(steps[-1].buffer_grid[buffer_loc[0]][buffer_loc[1]].name, steps[-1].buffer_grid[buffer_loc[0]][buffer_loc[1]].weight)
+            steps.append(Sift(
+                op=SHIP,
+                name=steps[-1].buffer_grid[buffer_loc[0]][buffer_loc[1]].name,
+                weight=steps[-1].buffer_grid[buffer_loc[0]][buffer_loc[1]].weight,
+                from_pos=buffer_loc,
+                to_pos=new_dest,
+                time=time,
+                prev_grid=steps[-1].ship_grid,
+                ship_grid=new_ship_grid,
+                buffer_grid=new_buffer_grid,
+                buffer_q=curr_buffer,
+                fval=0,
+                step=steps[-1].step + 1
+            ))
+
+        return steps[1:]
+    
+    def __get_sift_dest(self, ship_grid: list) -> list:
+        center_start = MAX_COL // 2 - 1
+        center_end = MAX_COL // 2
+        row = 0
+
+        while row < MAX_ROW:
+            while center_start >= 0 and center_end < MAX_COL:
+                if ship_grid[row][center_start].name == UNUSED:
+                    return [row, center_start]
+                elif ship_grid[row][center_end].name == UNUSED:
+                    return [row, center_end]
+                center_start -= 1
+                center_end += 1
+
+        return None
+
+    def __get_buffer_loc(self, buffer_grid: list, weight: int) -> list:
+        for col in range(MAX_COL_BUFFER):
+            for row in range(MAX_ROW_BUFFER):
+                if buffer_grid[row][col].name == UNUSED and (row == 0 or (buffer_grid[row - 1][col].name != UNUSED and buffer_grid[row - 1][col].weight <= weight)):
+                    return [row, col]
+
+
     
     def __get_possible_moves(self, ship_grid: list) -> list:
         moves = []

@@ -36,14 +36,15 @@ def test_balance_4():
     weight_diff = get_balance_diff(steps[-1].ship_grid)
     assert weight_diff <= 0.1
 
-# def test_balance_5():
-#     file_path = './tests/ship_cases/ShipCase5.txt'
-#     ship_grid = get_ship_grid(file_path)
-#     ship = Ship(ship_grid)
-#     steps = ship.get_balance_steps()
+def test_balance_5():
+    file_path = './tests/ship_cases/ShipCase5.txt'
+    ship_grid = get_ship_grid(file_path)
+    ship = Ship(ship_grid)
+    steps = ship.get_balance_steps()
 
-#     weight_diff = get_balance_diff(steps[-1].ship_grid)
-#     assert weight_diff <= 0.1
+    sift = ship.get_sift_steps()
+    assert steps == None
+    assert len(sift) == 10
 
 def test_balance_6():
     file_path = './tests/ship_cases/SilverQueen.txt'
