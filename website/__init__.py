@@ -130,6 +130,7 @@ def create_app(test_config=None):
         log_file_dir = os.path.join('../', app.config['LOG_FOLDER'])
         return send_from_directory(log_file_dir, filename, as_attachment=True)
 
+
     @app.route('/upload', methods=['GET', 'POST'])
     def upload():
         next_page = request.args.get('next', 'home')
@@ -162,6 +163,47 @@ def create_app(test_config=None):
                     elif next_page == 'balance':
                         return redirect(url_for('balance'))
         
+        return render_template('upload.html', next_page = next_page)
+    
+    @app.route('/add_comment', methods=['POST'])
+    def add_comment():
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
+        comment = request.form.get('comment')
+        if comment:
+            timestamp = get_pst_time()
+
+            if not os.path.exists(app.config['LOG_FOLDER']):
+                os.makedirs(app.config['LOG_FOLDER'])
+
+            with open(log_file_path, 'a') as file:
+                file.write(f"{timestamp}\tComment: {comment}\n")
+        
+        return redirect(url_for('home'))
+
+
+    @app.route('/logout', methods=['POST'])
+    def logout():
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+
+        if not os.path.exists(app.config['LOG_FOLDER']):
+            os.makedirs(app.config['LOG_FOLDER'])
+
+        timestamp = get_pst_time()
+
+        with open(log_file_path, 'a') as file:
+            file.write(f"{timestamp}    Log File Closed\n")
+
+        # Make the log file read-only
+        #os.chmod(log_file_path, stat.S_IREAD)
+
+        # session['year_closed'] = True
+
+        return redirect(url_for('index'))
         return resp
 
     return app
