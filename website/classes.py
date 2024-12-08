@@ -89,6 +89,7 @@ class Transfer(Node):
                 new_ship_grid = copy.deepcopy(self.ship_grid)
                 new_ship_grid[new_loc_x][new_loc_y] = self.ship_grid[top_x][top_y]
                 new_ship_grid[top_x][top_y] = Container(UNUSED, 0)
+                fval = self.step + 1 + time + len(self.load_containers) + len(self.unload_containers)
 
                 children.append(Transfer(
                                     op=MOVE, 
@@ -101,7 +102,7 @@ class Transfer(Node):
                                     ship_grid=new_ship_grid,
                                     load_containers=self.load_containers,
                                     unload_containers=self.unload_containers,
-                                    fval=0,
+                                    fval=fval,
                                     step=self.step + 1
                                     ))
             else:
@@ -110,6 +111,7 @@ class Transfer(Node):
                 new_ship_grid[x][y] = Container(UNUSED, 0)
                 new_unload_containers = copy.deepcopy(self.unload_containers)
                 new_unload_containers.remove([x, y])
+                fval = self.step + 1 + time + len(self.load_containers) + len(new_unload_containers)
                 children.append(Transfer(
                                     op=UNLOAD,
                                     name=self.ship_grid[x][y].name,
@@ -121,7 +123,7 @@ class Transfer(Node):
                                     ship_grid=new_ship_grid,
                                     load_containers=self.load_containers,
                                     unload_containers=new_unload_containers,
-                                    fval=0,
+                                    fval=fval,
                                     step=self.step + 1
                                     ))
 
@@ -133,6 +135,7 @@ class Transfer(Node):
                 new_ship_grid[free_loc[0]][free_loc[1]] = Container(container.name, container.weight)
                 new_load_containers = copy.deepcopy(self.load_containers)
                 new_load_containers.pop(0)
+                fval = self.step + 1 + time + len(new_load_containers) + len(self.unload_containers)
                 children.append(Transfer(
                                     op=LOAD,
                                     name=container.name,
@@ -144,7 +147,7 @@ class Transfer(Node):
                                     ship_grid=new_ship_grid,
                                     load_containers=new_load_containers,
                                     unload_containers=self.unload_containers,
-                                    fval=0,
+                                    fval=fval,
                                     step=self.step + 1
                                     ))
 
@@ -189,6 +192,22 @@ class Transfer(Node):
     def __load_time(self, dest: list) -> int:
         return manhattan_distance(SHIP_IN_OUT, dest)
     
+    def __hash__(self):
+        return super().__hash__()
+    
+    def __hash__(self):
+        return hash(str(self.from_pos[0]) + str(self.from_pos[1]) + self.name + str(self.weight) + str(self.time) + str(self.to_pos[0]) + str(self.to_pos[1]) + str(len(self.load_containers)) + str(len(self.unload_containers)) + str(self.step))
+    
+    def __eq__(self, other):
+        pos = self.from_pos == other.from_pos
+        name = self.name == other.name
+        weight = self.weight == other.weight
+        time = self.time == other.time
+        load = len(self.load_containers)
+        unload = len(self.unload_containers)
+        step = self.step == other.step
+        return pos and name and weight and time and load and unload and step
+    
 
 class Balance(Node):
     def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, fval: int, step: int, weight_diff: int):
@@ -222,6 +241,17 @@ class Balance(Node):
         return children
     
     def __penalty(self, grid: list) -> int:
+        """
+        Calculate the penalty for the current move.
+
+        Use the weight difference between the left and right side of the ship to calculate the penalty.
+        Heavy containers contribute positively if their side is underweight, and negatively if their side is overweight.
+
+        For example, if the left side is overweight as in ShipCase3, the penalty for moving Cat (9041) to the right side will be the lowest,
+        because it will be no longer on the left side. However, moving Rat (100) to the right side will have a hight penalty,
+        because Cat will contribute to the penalty for moving the light container to the right side and keeping 2 heavy ones (Cat and Ewe) on the left. 
+        """
+
         total_weight = sum(container.weight for row in grid for container in row if (container.name != UNUSED and container.name != NAN))
         left_weight = sum(container.weight for row in grid for container in row[:MAX_COL//2] if (container.name != UNUSED and container.name != NAN))
         right_weight = total_weight - left_weight
@@ -245,6 +275,7 @@ class Balance(Node):
         weight = self.weight == other.weight
         time = self.time == other.time
         return pos and name and weight and time
+    
     
 class Ship:
     def __init__(self, ship_grid: list):
@@ -280,16 +311,16 @@ class Ship:
         while self.open_set:
             self.open_set.sort(key=lambda x: x.fval)
             curr_node = self.open_set.pop(0)
-            curr_node.fval = curr_node.step + curr_node.time
             self.closed_set.add(curr_node)
 
+            # print(curr_node.op, curr_node.name, curr_node.fval, len(curr_node.load_containers), len(curr_node.unload_containers))
             curr_goal = len(curr_node.load_containers) + len(curr_node.unload_containers)
             if curr_goal == goal:
                 return self.__get_path(came_from, curr_node)
             
             children = curr_node.generate_children()
             for child in children:
-                if any(child.ship_grid == node.ship_grid for node in self.closed_set):
+                if child in self.closed_set:
                     continue
                 self.open_set.append(child)
                 came_from[child] = curr_node
