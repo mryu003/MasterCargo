@@ -20,8 +20,14 @@ SHIP = 'SHIP'
 BUFFER_IN_OUT = [5, 0]
 SHIP_BUFFER = 4
 
+# =================================================================================================
+# Helper functions
+# =================================================================================================
 
 def get_ship_grid(file_path: str) -> list:
+    """
+    Read the ship grid from the file and return it as a 2D list.
+    """
     grid = [[None for _ in range(MAX_COL)] for _ in range(MAX_ROW)]
     pattern = re.compile(r'\[(\d{2}),(\d{2})\], \{(\d{5})\}, (\w+)')
     with open(file_path, 'r') as file:
@@ -36,20 +42,27 @@ def manhattan_distance(start: list, end: list) -> int:
     return abs(start[0] - end[0]) + abs(start[1] - end[1])
 
 def get_balance_diff(ship_grid: list) -> float:
-        left = 0
-        right = 0
+    """
+    Calculate the difference in weight between the left and right side of the ship grid.
+    """
+    left = 0
+    right = 0
 
-        for row in range(MAX_ROW):
-            for col in range(MAX_COL):
-                if col < MAX_COL // 2:
-                    left += ship_grid[row][col].weight
-                else:
-                    right += ship_grid[row][col].weight
+    for row in range(MAX_ROW):
+        for col in range(MAX_COL):
+            if col < MAX_COL // 2:
+                left += ship_grid[row][col].weight
+            else:
+                right += ship_grid[row][col].weight
 
-        abs_diff = abs(left - right)
-        total_weight = left + right
+    abs_diff = abs(left - right)
+    total_weight = left + right
 
-        return abs_diff / total_weight
+    return abs_diff / total_weight
+
+# =================================================================================================
+# Classes: Container, Node, Transfer, Balance, Sift, Ship
+# =================================================================================================
 
 class Container:
     def __init__(self, name, weight):
@@ -57,7 +70,10 @@ class Container:
         self.weight = weight
 
 class Node:
-    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, fval: int, step: int):
+    """
+    Base class for the Transfer, Balance, and Sift classes.
+    """
+    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, step: int):
         self.op = op
         self.name = name
         self.weight = weight
@@ -66,10 +82,21 @@ class Node:
         self.time = time
         self.prev_grid = prev_grid
         self.ship_grid = ship_grid
-        self.fval = fval
         self.step = step
 
 class Transfer(Node):
+    """
+    Class for the transfer operation.
+    Methods: 
+    - generate_children: Generate all possible children nodes for the current node.
+    - __find_top_container: Find the top container in the column.
+    - __move_top_container: Find the destination for the top container using BFS. Return the time and the new location.
+    - __get_free_location: Find the first free location in the ship grid.
+    - __unload_time: Calculate the time to unload the container.
+    - __load_time: Calculate the time to load the container.
+    - __hash__: Return the hash value of the node.
+    - __eq__: Compare the current node with another node.
+    """
     def __init__(self, 
                  op: str, 
                  name: str, 
@@ -83,7 +110,8 @@ class Transfer(Node):
                  unload_containers: list,
                  fval: int,
                  step: int):
-        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, fval, step)
+        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, step)
+        self.fval = fval
         self.load_containers = load_containers
         self.unload_containers = unload_containers
 
@@ -91,8 +119,8 @@ class Transfer(Node):
         children = []
         for x, y in self.unload_containers:
             if self.ship_grid[x + 1][y].name != UNUSED:
-                top_x, top_y = self.find_top_container([x, y])
-                time, new_loc_x, new_loc_y = self.move_top_container([top_x, top_y])
+                top_x, top_y = self.__find_top_container([x, y])
+                time, new_loc_x, new_loc_y = self.__move_top_container([top_x, top_y])
                 new_ship_grid = copy.deepcopy(self.ship_grid)
                 new_ship_grid[new_loc_x][new_loc_y] = self.ship_grid[top_x][top_y]
                 new_ship_grid[top_x][top_y] = Container(UNUSED, 0)
@@ -160,7 +188,7 @@ class Transfer(Node):
 
         return children
     
-    def find_top_container(self, source: list) -> list:
+    def __find_top_container(self, source: list) -> list:
         top_x = source[0]
         while top_x < MAX_ROW and self.ship_grid[top_x][source[1]].name != UNUSED:
             if top_x == MAX_ROW - 1:
@@ -169,7 +197,7 @@ class Transfer(Node):
         return [top_x - 1, source[1]]
 
     
-    def move_top_container(self, source: list) -> list:
+    def __move_top_container(self, source: list) -> list:
         queue = [source]
         visited = set()
 
@@ -214,8 +242,17 @@ class Transfer(Node):
     
 
 class Balance(Node):
+    """
+    Class for the balance operation.
+    Methods:
+    - generate_children: Generate all possible children nodes for the current node.
+    - __penalty: Calculate the penalty for the current move.
+    - __hash__: Return the hash value of the node.
+    - __eq__: Compare the current node with another node.
+    """
     def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, fval: int, step: int, weight_diff: int):
-        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, fval, step)
+        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, step)
+        self.fval = fval
         self.weight_diff = weight_diff
 
     def generate_children(self, moves: list) -> list:
@@ -281,12 +318,32 @@ class Balance(Node):
         return pos and name and weight and time
     
 class Sift(Node):
-    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, fval: int, step: int, buffer_grid: list, buffer_q: list):
-        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, fval, step)
+    """
+    Class for the sift operation. Only used to store the operation information.
+    """
+    def __init__(self, op: str, name: str, weight: int, from_pos: list, to_pos: list, time: int, prev_grid: list, ship_grid: list, step: int, buffer_grid: list, buffer_q: list):
+        super().__init__(op, name, weight, from_pos, to_pos, time, prev_grid, ship_grid, step)
         self.buffer_grid = buffer_grid
         self.buffer_q = buffer_q
     
 class Ship:
+    """
+    Class for the ship. Contains the ship grid and the open and closed sets for the A* algorithm.
+    Methods:
+    - get_transfer_steps: Get the steps for the transfer operation.
+    - get_balance_steps: Get the steps for the balance operation.
+    - get_sift_steps: Get the steps for the sift operation.
+    - has_space: Check if there is enough space for the transfer operation.
+    - __buffer_moves: Get the steps to move containers from the ship to the buffer.
+    - __sift_moves: Get the steps to move containers from the buffer to the ship in SIFT-like manner.
+    - __get_sift_dest: Get the destination in the ship grid for the sift operation.
+    - __get_buffer_loc: Get the location in the buffer for the container.
+    - __get_possible_moves: Get the possible moves for the balance operation.
+    - __get_dest: Get the destination for the container to move within the ship grid.
+    - __get_path: Get the path from the start node to the goal node.
+    - __get_free_space: Get the current number of free locations in the ship grid.
+    """
+    
     def __init__(self, ship_grid: list):
         self.ship_grid = ship_grid
         self.open_set = []
@@ -322,7 +379,6 @@ class Ship:
             curr_node = self.open_set.pop(0)
             self.closed_set.add(curr_node)
 
-            # print(curr_node.op, curr_node.name, curr_node.fval, len(curr_node.load_containers), len(curr_node.unload_containers))
             curr_goal = len(curr_node.load_containers) + len(curr_node.unload_containers)
             if curr_goal == goal:
                 return self.__get_path(came_from, curr_node)
@@ -360,6 +416,7 @@ class Ship:
         while self.open_set:
             self.open_set.sort(key=lambda x: x.fval)
 
+            # TODO: This is a temporary fix to prevent the algorithm from running indefinitely.
             if len(self.open_set) > 2000:
                 break
             
@@ -403,7 +460,6 @@ class Ship:
             time=0,
             prev_grid=start,
             ship_grid=start,
-            fval=0,
             step=0,
             buffer_grid=buffer_grid,
             buffer_q=[]
@@ -434,7 +490,6 @@ class Ship:
                             ship_grid=new_ship_grid,
                             buffer_grid=new_buffer_grid,
                             buffer_q=new_buffer_q,
-                            fval=0,
                             step=steps[-1].step + 1
                         ))
 
@@ -465,7 +520,6 @@ class Ship:
                 ship_grid=new_ship_grid,
                 buffer_grid=new_buffer_grid,
                 buffer_q=curr_buffer,
-                fval=0,
                 step=steps[-1].step + 1
             ))
 
