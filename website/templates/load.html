@@ -21,57 +21,33 @@
 
     <div class="loginContainer">
         <div class="itemAboveBox">
-            <h2>Enter Containers to load</h2>
+            <p>New Item to Load:</p>
         </div>
 
-        <!-- Form to input new item -->
         <form id="ItemForm">
-            <h2>Enter Containers to load</h2>
-            <label for="itemInput">Add container: </label>
+            <label for="itemInput">Enter an item to load:</label>
             <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
-            <label for="weightInput">Container Weight (in kg):</label>
+            <label for="weightInput">Enter weight (in kg):</label>
             <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
             <button type="submit" class="signInButton">Add Item</button>
         </form>
         
         <h2>Loaded Items:</h2>
         <ul id="ItemList">
-            <!-- Render existing items from session -->
             {% for item in loaded_items %}
                 <li>
                     {{ item.name }} - {{ item.weight }} kg
-                    <button type="button" class= "removeButton" data-name="{{ item.name }}"> Remove </button>
+                    <button type="button" class="removeButton" data-name="{{ item.name }}">Remove</button>
                 </li>
             {% endfor %}
         </ul>
     </div>
 
-        <!-- Form that submits all items to the server -->
-        <form id="SubmitForm" method="POST" action="{{ url_for('load') }}">
-            <input type="hidden" name="items" id="hiddenItems">
-            <button type="submit" class="loginButton">Submit</button>
-        </form>
-    </div>
+    <form id="SubmitForm" method="POST" action="{{ url_for('load') }}" style="position: relative;">
+        <input type="hidden" name="items" id="hiddenItems">
+        <button type="submit" class="submitButton">Submit Items</button>
+    </form>
 
-
-    <script>
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('signInModal')) {
-                document.getElementById('signInModal').style.display = "none";
-            }
-        }
-    
-        function confirmCloseYear() {
-            fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({action: 'Log Closed'}),
-            });
-            window.location.href = '/';
-        }
-    </script>
     <footer>
         <div class="comment-section">
             <h3>Add Comment</h3>
