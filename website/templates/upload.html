@@ -11,7 +11,7 @@
     <header>
         <nav>
             <div class="logFile">
-                <button class="closeYear"> Close Year </button>
+                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
                 <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
             </div>
             <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
@@ -25,7 +25,15 @@
             <button type = "submit" class = "submitButton"> Submit Manifest </button>
         </form>
     </div>
-    
+
+    <div id="closeYearModal" class="modal">
+        <div class="modalContent">
+            <p>Are you sure you want to close the year?</p>
+            <button class="confirmButton" onclick="confirmCloseYear()">Yes</button>
+            <button class="cancelButton" onclick="document.getElementById('closeYearModal').style.display = 'none'">No</button>
+        </div>
+    </div>
+
     <div id = "signInModal" class = "modal">
         <div class = "modalContent">
             <span class = "close" onclick = "document.getElementById('signInModal').style.display='none'"> &times;</span>
@@ -45,5 +53,32 @@
             }
         }
     </script>
+
+    <script>
+        
+        function confirmCloseYear() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({action: 'Log Closed'}),
+            });
+            window.location.href = '/';
+        }
+        window.onclick = function(event) {
+        const modal = document.getElementById('closeYearModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+    </script>
+    <div class="comment-section">
+        <h3>Add Comment</h3>
+        <form method="POST" action="/add_comment">
+            <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+            <button type="submit" class="submitButton">Add Comment</button>
+        </form>
+    </div>
 </body>
 </html>

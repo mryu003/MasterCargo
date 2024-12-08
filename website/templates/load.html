@@ -7,10 +7,38 @@
     <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}"> 
 </head>
 <body>
-    <header class="page-title">
+    <!-- <header class="page-title">
         <h1>Loading Page</h1>
+    </header> -->
+    <header>
+        <nav>
+            <div class="logFile">
+                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
+                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            </div>
+            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+        </nav>
     </header>
 
+    <div id = "signInModal" class = "modal">
+        <div class = "modalContent">
+            <span class = "close" onclick = "document.getElementById('signInModal').style.display='none'"> &times;</span>
+            <h2> Sign In </h2>
+            <form method = "POST" action = "/home">
+                <label for = "username"> Enter Your Name: </label>
+                <input type = "text" name = "username" class = "usernameInput" required>
+                <button type = "submit" class = "signinButton"> Sign In </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('signInModal')) {
+                document.getElementById('signInModal').style.display = "none";
+            }
+        }
+    </script>
     <div class="loginContainer">
         <div class="itemAboveBox">
             <p>New Item to Load:</p>
@@ -110,5 +138,13 @@
             });
         }
     </script>
+
+    <div class="comment-section">
+        <h3>Add Comment</h3>
+        <form method="POST" action="/add_comment">
+            <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+            <button type="submit" class="submitButton">Add Comment</button>
+        </form>
+    </div>
 </body>
 </html>
