@@ -361,3 +361,15 @@ footer {
     width: 150px;
     height: 40px;
 }
+
+.grid-cell.from-highlight {
+    background-color: blue;
+    color: white;
+    font-weight: bold;
+}
+
+.grid-cell.to-highlight {
+    background-color: red;
+    color: white;
+    font-weight: bold;
+}

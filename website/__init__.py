@@ -154,14 +154,149 @@ def create_app(test_config=None):
 
         return resp
 
-
     @app.route('/balance', methods=['GET', 'POST'])
     def balance():
-        steps = session.get('steps', [])
-        if steps:
-            for step in steps:
-                print(f"Operation: {step.op}, Name: {step.name}, From: {step.from_pos}, To: {step.to_pos}")
-        return make_response(render_template('balance.html'))
+        from website.classes import get_ship_grid, Ship, Container, get_balance_diff
+
+        steps = session.get('balance_steps', [])
+        total_steps = len(steps)
+
+        if request.method == 'POST':
+            current_step = int(request.form.get('current_step', 0)) + 1
+        else:
+            current_step = 0
+
+        if current_step == 0:
+            manifest_path = session.get('manifest_path')
+            if not manifest_path:
+                return "Manifest not uploaded.", 400
+
+            try:
+                ship_grid = get_ship_grid(manifest_path)
+                ship = Ship(ship_grid)
+                balance_steps = ship.get_balance_steps()
+
+                session['balance_steps'] = [
+                    {
+                        'op': step.op,
+                        'name': step.name,
+                        'weight': step.weight,
+                        'from_pos': step.from_pos,
+                        'to_pos': step.to_pos,
+                        'time': step.time,
+                        'ship_grid': [
+                            [
+                                {
+                                    'name': cell.name if cell else 'NAN',
+                                    'weight': cell.weight if cell else 0,
+                                }
+                                for cell in row
+                            ]
+                            for row in step.ship_grid
+                        ],
+                    }
+                    for step in balance_steps
+                ]
+
+                steps = session['balance_steps']
+                total_steps = len(steps)
+
+            except Exception as e:
+                print(f"Error generating balance steps: {e}")
+                return "Error calculating balance steps.", 400
+
+        if current_step >= total_steps:
+            manifest_path = session.get('manifest_path')
+            base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
+            outbound_file_name = f"{base_name}OUTBOUND.txt"
+            manifest_folder = os.path.dirname(manifest_path)
+            outbound_file_path = os.path.join(manifest_folder, outbound_file_name)
+
+            final_grid = steps[-1]['ship_grid']
+            with open(outbound_file_path, 'w') as outbound_file:
+                for row_idx, row in enumerate(final_grid):
+                    for col_idx, cell in enumerate(row):
+                        outbound_file.write(
+                            f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                            f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                        )
+
+            return render_template(
+                'balance.html',
+                completed=True,
+                outbound_file_name=outbound_file_name,
+                outbound_file_path=url_for('download_balanced', filename=outbound_file_name)
+            )
+
+        if current_step == 0:
+            display_grid = get_ship_grid(session.get('manifest_path'))[::-1]
+        else:
+            display_grid = steps[current_step - 1]['ship_grid'][::-1]
+
+        step = steps[current_step]
+
+        def adjust_position(pos):
+            return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
+
+        step['from_pos'] = adjust_position(step['from_pos'])
+        step['to_pos'] = adjust_position(step['to_pos'])
+
+        curr_year = datetime.now().year
+        log_file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
+        operation_mapping = {"UNLOAD": "offloaded", "MOVE": "moved", "LOAD": "loaded"}
+        operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
+        timestamp = get_pst_time()
+        log_entry = f"{timestamp}\t{step['name']} {operation} from {step['from_pos']} to {step['to_pos']}\n"
+        with open(log_file_path, 'a') as log_file:
+            log_file.write(log_entry)
+
+        manifest_path = session.get('manifest_path')
+        base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
+        updated_manifest_path = os.path.join(os.path.dirname(manifest_path), f"{base_name}OUTBOUND.txt")
+        with open(updated_manifest_path, 'w') as manifest_file:
+            for row_idx, row in enumerate(step['ship_grid']):
+                for col_idx, cell in enumerate(row):
+                    manifest_file.write(
+                        f"[{row_idx + 1:02},{col_idx + 1:02}], "
+                        f"{{{cell['weight']:05}}}, {cell['name']}\n"
+                    )
+
+        return render_template(
+            'balance.html',
+            step=step,
+            current_step=current_step,
+            total_steps=total_steps,
+            display_grid=display_grid,
+            enumerate=enumerate,
+            grid_length=len(display_grid)
+        )
+
+    @app.route('/download_balanced/<filename>')
+    def download_balanced(filename):
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest path not found.", 400
+
+        manifest_folder = os.path.abspath(os.path.dirname(manifest_path))
+        file_path = os.path.join(manifest_folder, filename)
+
+        if os.path.exists(file_path):
+            curr_year = datetime.now().year
+            log_file_name = f"KeoghsPort{curr_year}.txt"
+            log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
+            timestamp = get_pst_time()
+            log_entry = f"{timestamp}\tManifest {filename} downloaded\n"
+            
+            if not os.path.exists(app.config['LOG_FOLDER']):
+                os.makedirs(app.config['LOG_FOLDER'])
+
+            with open(log_file_path, 'a') as log_file:
+                log_file.write(log_entry)
+
+            return send_file(file_path, as_attachment=True)
+        else:
+            return f"File {filename} not found at {file_path}.", 404
 
     @app.route('/download')
     def download_log():
@@ -268,15 +403,16 @@ def create_app(test_config=None):
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
-        operation_mapping = {
-            "UNLOAD": "offloaded",
-            "MOVE": "moved",
-            "LOAD": "loaded"
-            }
+        operation_mapping = {"UNLOAD": "offloaded", "MOVE": "moved", "LOAD": "loaded"}
         operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
         name = step['name']
         timestamp = get_pst_time()
-        log_entry = f"{timestamp}\t{name} {operation}\n"
+
+        if step['op'].upper() == "MOVE":
+            log_entry = f"{timestamp}\t{name} {operation} from {step['from_pos']} to {step['to_pos']}\n"
+        else:
+            log_entry = f"{timestamp}\t{name} {operation} from {step['from_pos']}\n"
+
         with open(log_file_path, 'a') as log_file:
             log_file.write(log_entry)
 
@@ -289,7 +425,6 @@ def create_app(test_config=None):
             grid=prev_grid[::-1],
             completed=False
         )
-
     @app.route('/download/<filename>')
     def download_outbound(filename):
         manifest_path = session.get('manifest_path')
@@ -300,6 +435,18 @@ def create_app(test_config=None):
         file_path = os.path.join(manifest_folder, filename)
 
         if os.path.exists(file_path):
+            curr_year = datetime.now().year
+            log_file_name = f"KeoghsPort{curr_year}.txt"
+            log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
+            timestamp = get_pst_time()
+            log_entry = f"{timestamp}\tManifest {filename} downloaded\n"
+            
+            if not os.path.exists(app.config['LOG_FOLDER']):
+                os.makedirs(app.config['LOG_FOLDER'])
+
+            with open(log_file_path, 'a') as log_file:
+                log_file.write(log_entry)
+
             return send_file(file_path, as_attachment=True)
         else:
             return f"File {filename} not found at {file_path}.", 404
