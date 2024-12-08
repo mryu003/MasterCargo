@@ -39,26 +39,22 @@ def create_app(test_config=None):
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
-
-        #Last visited page - added to cookie. Repeated for each new page
-        resp = make_response(render_template('home.html', logged_in=False))
-        resp.set_cookie('last_visited', 'index')  
-        session['last_visited'] = 'index'  
+        resp = make_response(render_template('signin.html', logged_in=False))
         
+        resp.set_cookie('last_visited', 'index')
+        session['last_visited'] = 'index'
+
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
-
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
-        
 
-        return resp
         if request.method == 'POST':
             return home()
-        
-        return render_template('signin.html')
+        return resp
+
 
 
     @app.route('/home', methods=['GET', 'POST'])

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,6 @@
             </div>
 
             <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
-
         </nav>
     </header>
 
@@ -50,9 +50,6 @@
                 document.getElementById('signInModal').style.display = "none";
             }
         }
-    </script>
-
-    <script>
     
         function confirmCloseYear() {
             fetch('/logout', {
@@ -64,20 +61,16 @@
             });
             window.location.href = '/';
         }
-        window.onclick = function(event) {
-        const modal = document.getElementById('closeYearModal');
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    };
     </script>
-</script>
-    <div class="comment-section">
-        <h3>Add Comment</h3>
-        <form method="POST" action="/add_comment">
-            <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-            <button type="submit" class="submitButton">Add Comment</button>
-        </form>
-    </div>
+
+    <footer>
+        <div class="comment-section">
+            <h3>Add Comment</h3>
+            <form method="POST" action="/add_comment">
+                <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+                <button type="submit" class="addCommentButton">Add Comment</button>
+            </form>
+        </div>
+    </footer>
 </body>
 </html>
