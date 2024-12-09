@@ -67,10 +67,12 @@
             window.location.href = '/';
         }
         function clearCommentBox() {
-            const commentBox = document.getElementById('commentBox');
-            if (commentBox) {
-                commentBox.value = ''; 
-            }
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
         }
     </script>
 
@@ -78,7 +80,7 @@
         <div class="comment-section">
             <p>Add comment</p>
             <form method="POST" action="/add_comment" onsubmit= "clearCommentBox()">
-                <textarea id = "commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+                <textarea name="comment" id="commentBox" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
                 <button type="submit" class="add-comment-button">Add Comment</button>
             </form>
         </div>

@@ -161,15 +161,17 @@
         function finishOperation() {
             window.location.href = "/home";
         }
-    </script>
-    <script>
+
         function clearCommentBox() {
-            const commentBox = document.getElementById('commentBox');
-            if (commentBox) {
-                commentBox.value = ''; 
-            }
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
         }
     </script>
+
 </body>
 
 </html>

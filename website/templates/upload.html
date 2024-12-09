@@ -71,6 +71,14 @@
             });
             window.location.href = '/';
         }
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
+        }
     </script>
 
     <footer>
@@ -82,13 +90,5 @@
             </form>
         </div>
     </footer>
-    <script>
-        function clearCommentBox() {
-            const commentBox = document.getElementById('commentBox');
-            if (commentBox) {
-                commentBox.value = ''; 
-            }
-        }
-    </script>
 </body>
 </html>

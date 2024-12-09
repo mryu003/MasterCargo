@@ -162,14 +162,15 @@
             });
             window.location.href = '/';
         }
-    </script>
-    <script>
         function clearCommentBox() {
-            const CommentBox = document.getElementById('commentBox');
-            if (CommentBox) {
-                CommentBox.value = ''; 
-            }
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
         }
     </script>
+
 </body>
 </html>

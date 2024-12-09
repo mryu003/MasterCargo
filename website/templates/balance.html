@@ -63,7 +63,7 @@
         <div class="comment-section">
             <h3>Add Comment</h3>
             <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
-                <textarea id = "commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+                <textarea name="comment" id="commentBox" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
                 <button type="submit" class="addCommentButton">Add Comment</button>
             </form>
         </div>
@@ -133,10 +133,12 @@
         }
 
         function clearCommentBox() {
-            const commentBox = document.getElementById('commentBox');
-            if (commentBox) {
-                commentBox.value = '';
-            }
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
         }
         
     </script>
