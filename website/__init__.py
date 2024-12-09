@@ -141,6 +141,7 @@ def create_app(test_config=None):
 
         if request.method == 'POST':
             selected_containers = request.form.getlist('container')
+            print(selected_containers)
             if selected_containers:
                 processed_containers_path = os.path.join(manifest_folder, "unloaded_containers.txt")
                 try:
