@@ -176,27 +176,57 @@ def create_app(test_config=None):
                 ship = Ship(ship_grid)
                 balance_steps = ship.get_balance_steps()
 
-                session['balance_steps'] = [
-                    {
-                        'op': step.op,
-                        'name': step.name,
-                        'weight': step.weight,
-                        'from_pos': step.from_pos,
-                        'to_pos': step.to_pos,
-                        'time': step.time,
-                        'ship_grid': [
-                            [
-                                {
-                                    'name': cell.name if cell else 'NAN',
-                                    'weight': cell.weight if cell else 0,
-                                }
-                                for cell in row
-                            ]
-                            for row in step.ship_grid
-                        ],
-                    }
-                    for step in balance_steps
-                ]
+                if balance_steps is None:
+                    sift_steps = ship.get_sift_steps()
+                    session['balance_steps'] = [
+                        {
+                            'op': step.op,
+                            'name': step.name,
+                            'weight': step.weight,
+                            'from_pos': step.from_pos,
+                            'to_pos': step.to_pos,
+                            'time': step.time,
+                            'ship_grid': [
+                                [
+                                    {
+                                        'name': cell.name if cell else 'NAN',
+                                        'weight': cell.weight if cell else 0,
+                                    }
+                                    for cell in row
+                                ]
+                                for row in step.ship_grid
+                            ],
+                        }
+                        for step in sift_steps
+                    ]
+                    log_entry = f"{get_pst_time()}\tSIFT steps initiated for manifest {os.path.basename(manifest_path)}.\n"
+                else:
+                    session['balance_steps'] = [
+                        {
+                            'op': step.op,
+                            'name': step.name,
+                            'weight': step.weight,
+                            'from_pos': step.from_pos,
+                            'to_pos': step.to_pos,
+                            'time': step.time,
+                            'ship_grid': [
+                                [
+                                    {
+                                        'name': cell.name if cell else 'NAN',
+                                        'weight': cell.weight if cell else 0,
+                                    }
+                                    for cell in row
+                                ]
+                                for row in step.ship_grid
+                            ],
+                        }
+                        for step in balance_steps
+                    ]
+                    log_entry = f"{get_pst_time()}\tBalance steps initiated for manifest {os.path.basename(manifest_path)}.\n"
+
+                log_file_path = os.path.join(app.config['LOG_FOLDER'], f"KeoghsPort{datetime.now().year}.txt")
+                with open(log_file_path, 'a') as log_file:
+                    log_file.write(log_entry)
 
                 steps = session['balance_steps']
                 total_steps = len(steps)
