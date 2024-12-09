@@ -80,7 +80,7 @@ def create_app(test_config=None):
                 with open(log_file_path, 'a') as file:
                     file.write(f"{timestamp}\t{username} signed in \n")
                 
-                return redirect(url_for('home'))
+                return '', 204
 
         # Get ast visited page from cookie and session and display 
         last_visited_cookie = request.cookies.get('last_visited', 'None')
@@ -472,8 +472,6 @@ def create_app(test_config=None):
 
         return '', 204
         
-
-
     @app.route('/logout', methods=['POST'])
     def logout():
         curr_year = datetime.now().year
