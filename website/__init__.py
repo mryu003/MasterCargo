@@ -469,8 +469,9 @@ def create_app(test_config=None):
 
             with open(log_file_path, 'a') as file:
                 file.write(f"{timestamp}\tComment: {comment}\n")
+
+        return '', 204
         
-        return redirect(url_for('home'))
 
 
     @app.route('/logout', methods=['POST'])

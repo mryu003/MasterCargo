@@ -11,28 +11,58 @@
 <body>
     <header>
         <nav>
-            <div class="logFile">
-                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
-                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            <div class="log-file">
+                <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
+                <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button> 
         </nav>
     </header>
 
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id = "sign-in-modal" class = "modal">
+        <div class="content-background">
+            <div class = "modal-content">
+                <h2> Sign In </h2>
+                <form method = "POST" action = "/home">
+                    <label for = "username"> Enter Your Name: </label>
+                    <input type = "text" name = "username" class = "usernameInput" required>
+                    <button type = "submit" class = "sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="loginContainer">
         <div class="itemAboveBox">
-            <p>New Item to Load:</p>
+            <h2>Enter containers to load.</h2>
         </div>
 
         <form id="ItemForm">
-            <label for="itemInput">Enter an item to load:</label>
-            <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
-            <label for="weightInput">Enter weight (in kg):</label>
-            <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
+            <div class="container-name">
+                <label for="itemInput">Container Name</label>
+                <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
+            </div>
+            <div class="container-weight">
+                <label for="weightInput">Container weight (kg):</label>
+                <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
+            </div>
             <button type="submit" class="signInButton">Add Item</button>
         </form>
         
-        <h2>Loaded Items:</h2>
+        <h2>Items to load:</h2>
         <ul id="ItemList">
             {% for item in loaded_items %}
                 <li>
@@ -45,15 +75,15 @@
 
     <form id="SubmitForm" method="POST" action="{{ url_for('load') }}" style="position: relative;">
         <input type="hidden" name="items" id="hiddenItems">
-        <button type="submit" class="submitButton">Submit Items</button>
+        <button type="submit" class="submitButton">Submit</button>
     </form>
 
     <footer>
         <div class="comment-section">
-            <h3>Add Comment</h3>
+            <p>Add comment</p>
             <form method="POST" action="/add_comment">
-                <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-                <button type="submit" class="addCommentButton">Add Comment</button>
+                <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
             </form>
         </div>
     </footer>
@@ -114,6 +144,23 @@
                 listItem.appendChild(removeButton);
                 itemList.appendChild(listItem);
             });
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('sign-in-modal')) {
+                document.getElementById('sign-in-modal').style.display = "none";
+            }
+        }
+    
+        function confirmCloseYear() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({action: 'Log Closed'}),
+            });
+            window.location.href = '/';
         }
     </script>
 </body>
