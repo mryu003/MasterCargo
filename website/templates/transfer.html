@@ -61,18 +61,21 @@
                     </h3>
                 {% endif %}
                 <div class="grid-container">
-                    {% for row in grid %}
-                        {% for cell in row %}
+                    {% for row_index, row in enumerate(grid, start=1) %}
+                        {% for col_index, cell in enumerate(row, start=1) %}
                             <div 
                                 class="grid-cell 
-                                       {% if cell['name'] == 'UNUSED' %} unused 
-                                       {% elif cell['name'] == 'NAN' %} nan 
-                                       {% else %} filled {% endif %}">
+                                    {% if [grid|length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                    {% elif [grid|length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                    {% elif cell['name'] == 'UNUSED' %}unused
+                                    {% elif cell['name'] == 'NAN' %}nan
+                                    {% else %}filled{% endif %}">
                                 {{ cell['name'] }}<br>{{ cell['weight'] }}
                             </div>
                         {% endfor %}
                     {% endfor %}
                 </div>
+                
                 <form method="POST">
                     <input type="hidden" name="current_step" value="{{ current_step }}">
                     {% if current_step < total_steps %}

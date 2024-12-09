@@ -453,8 +453,10 @@ def create_app(test_config=None):
             total_steps=total_steps,
             total_time=total_time,
             grid=prev_grid[::-1],
-            completed=False
+            completed=False,
+            enumerate=enumerate
         )
+    
     @app.route('/download/<filename>')
     def download_outbound(filename):
         manifest_path = session.get('manifest_path')

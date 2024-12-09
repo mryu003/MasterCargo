@@ -152,7 +152,7 @@ class Transfer(Node):
                                     name=self.ship_grid[x][y].name,
                                     weight=self.ship_grid[x][y].weight,
                                     from_pos=[x, y],
-                                    to_pos=SHIP_IN_OUT,
+                                    to_pos=TRUCK,
                                     time=time,
                                     prev_grid=self.ship_grid,
                                     ship_grid=new_ship_grid,
