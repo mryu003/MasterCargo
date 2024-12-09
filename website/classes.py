@@ -204,7 +204,7 @@ class Transfer(Node):
         while queue:
             curr = queue.pop(0)
             visited.add(tuple(curr))
-            if self.ship_grid[curr[0]][curr[1]].name == UNUSED and self.ship_grid[curr[0] - 1][curr[1]].name != UNUSED:
+            if self.ship_grid[curr[0]][curr[1]].name == UNUSED and self.ship_grid[curr[0] - 1][curr[1]].name != UNUSED and self.ship_grid[curr[0] - 1][curr[1]] != self.ship_grid[source[0]][source[1]]:
                 return [manhattan_distance(source, curr), curr[0], curr[1]]
             for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
                 new_x, new_y = curr[0] + dx, curr[1] + dy
