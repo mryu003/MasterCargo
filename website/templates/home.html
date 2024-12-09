@@ -66,16 +66,23 @@
             });
             window.location.href = '/';
         }
+        function clearCommentBox() {
+            const commentBox = document.getElementById('commentBox');
+            if (commentBox) {
+                commentBox.value = ''; 
+            }
+        }
     </script>
 
     <footer>
         <div class="comment-section">
             <p>Add comment</p>
-            <form method="POST" action="/add_comment">
-                <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+            <form method="POST" action="/add_comment" onsubmit= "clearCommentBox()">
+                <textarea id = "commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
                 <button type="submit" class="add-comment-button">Add Comment</button>
             </form>
         </div>
     </footer>
+
 </body>
 </html>
