@@ -11,11 +11,12 @@
 <body>
     <header>
         <nav>
-            <div class="logFile">
-                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
-                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            <div class="log-file">
+                <button class="close-year" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
+                <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button>
+
+            <button class="sign-in-button modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
         </nav>
     </header>
 
@@ -61,8 +62,8 @@
     <footer>
         <div class="comment-section">
             <h3>Add Comment</h3>
-            <form method="POST" action="/add_comment">
-                <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
+                <textarea name="comment" id="commentBox" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
                 <button type="submit" class="addCommentButton">Add Comment</button>
             </form>
         </div>
@@ -130,6 +131,16 @@
             });
             window.location.href = '/';
         }
+
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
+        }
+        
     </script>
 </body>
 
