@@ -84,6 +84,12 @@ def create_app(test_config=None):
         resp.set_cookie('last_visited', 'home')  
         session['last_visited'] = 'home' 
 
+        session.pop('initial_grid', None)
+        session.pop('loaded_items', None)
+        session.pop('steps', None)
+        session.pop('unload_containers', None)
+        session.pop('balance_steps', None)
+
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
 
