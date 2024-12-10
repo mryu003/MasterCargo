@@ -142,8 +142,7 @@ def create_app(test_config=None):
                     ship = Ship(ship_grid)
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
-                    unload_containers = [[0, 1], [0, 2]]  # This is temporary
-                    steps = ship.get_transfer_steps(load_containers, unload_containers)
+                    steps = ship.get_transfer_steps(load_containers, session['unload_containers'])
                     session['steps'] = [
                         {
                             'op': step.op,
@@ -591,6 +590,11 @@ def create_app(test_config=None):
                                     f"[{row_idx + 1:02},{col_idx + 1:02}], "
                                     f"{{{cell.weight if cell else 0:05}}}, {cell.name if cell else 'UNUSED'}\n"
                                 )
+                    unload_containers = []
+                    for item in selected_cells:
+                        unload_containers.append([7 - item['row'], item['col']])
+                    
+                    session['unload_containers'] = unload_containers
 
                     return redirect(url_for('load'))
 
