@@ -142,12 +142,7 @@ def create_app(test_config=None):
                     ship = Ship(ship_grid)
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
-                    unload_containers = [
-                        [row_idx, col_idx]
-                        for row_idx, row in enumerate(ship_grid)
-                        for col_idx, cell in enumerate(row)
-                        if cell and cell.name not in ['UNUSED', 'NAN']
-                    ]
+                    unload_containers = session.get('unload_containers', [])
                     steps = ship.get_transfer_steps(load_containers, unload_containers)
                     session['steps'] = [
                         {
@@ -570,6 +565,7 @@ def create_app(test_config=None):
             items = request.form.get('items')
             if items:
                 selected_cells = json.loads(items)
+                unload_containers = []
 
                 try:
                     # Unloading
@@ -577,26 +573,9 @@ def create_app(test_config=None):
                         display_row = cell['row']
                         original_row = len(ship_grid) - 1 - display_row
                         original_col = cell['col']
+                        unload_containers.append([original_row, original_col])
 
-                        # Containers falling
-                        for row in range(original_row, len(ship_grid) - 1):
-                            if ship_grid[row + 1][original_col] and ship_grid[row + 1][original_col].name == "NAN":
-                                break
-                            ship_grid[row][original_col] = ship_grid[row + 1][original_col]
-                            ship_grid[row + 1][original_col] = None
-
-                        if ship_grid[len(ship_grid) - 1][original_col] and ship_grid[len(ship_grid) - 1][original_col].name != "NAN":
-                            ship_grid[len(ship_grid) - 1][original_col] = None
-
-                    # Saving manifest back again
-                    with open(manifest_path, 'w') as manifest_file:
-                        for row_idx, row in enumerate(ship_grid):
-                            for col_idx, cell in enumerate(row):
-                                manifest_file.write(
-                                    f"[{row_idx + 1:02},{col_idx + 1:02}], "
-                                    f"{{{cell.weight if cell else 0:05}}}, {cell.name if cell else 'UNUSED'}\n"
-                                )
-
+                    session['unload_containers'] = unload_containers
                     return redirect(url_for('load'))
 
                 except Exception as e:
