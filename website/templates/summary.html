@@ -1,20 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operation Summary</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Summary</title>
 </head>
 <body>
-    <header>
-        <h1>Operation Summary</h1>
-    </header>
-    <main>
-        <p>The operation will take <strong>{{ total_steps }}</strong> steps and a total time of <strong>{{ total_time }}</strong> minutes.</p>
-        <form action="/transfer" method="GET">
-            <button type="submit">Start Operation</button>
-        </form>
-    </main>
+    <h1>Operation Summary</h1>
+    <p>Total Steps: {{ total_steps }}</p>
+    <p>Total Time: {{ total_time }} minutes</p>
+    <form method="POST">
+        <button type="submit">Proceed to Transfer</button>
+    </form>
 </body>
 </html>
