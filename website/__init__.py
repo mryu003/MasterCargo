@@ -531,7 +531,7 @@ def create_app(test_config=None):
         timestamp = get_pst_time()
 
         with open(log_file_path, 'a') as file:
-            file.write(f"{timestamp}    Log File Closed\n")
+            file.write(f"{timestamp}\tLog File Closed\n")
 
         # Make the log file read-only
         #os.chmod(log_file_path, stat.S_IREAD)
