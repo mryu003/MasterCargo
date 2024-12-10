@@ -45,6 +45,15 @@
         </div>
     </div>
 
+    <div id="download-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Did you send the manifest file?</p>
+                <button class="confirm-button" onclick="navigateToHome()">Yes, finish operation</button>
+            </div>
+        </div>
+    </div>
+
     <main>
         {% if completed %}
             <div class="completed-container">
@@ -139,8 +148,6 @@
                     const writable = await handle.createWritable();
                     await writable.write(fileContent);
                     await writable.close();
-    
-                    alert("File saved successfully!");
                 } else {
                     const blob = new Blob([fileContent], { type: "text/plain" });
                     const url = window.URL.createObjectURL(blob);
@@ -151,19 +158,19 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
-    
-                    alert("Download complete! Did you send the manifest file? ");
                 }
-    
-                finishOperation();
+
+                document.getElementById('download-modal').style.display = 'block';
+
             } catch (error) {
                 console.error("Error downloading file:", error);
                 alert("An error occurred while downloading the file.");
             }
         }
-    
-        function finishOperation() {
-            window.location.href = "/home";
+
+        function navigateToHome() {
+            document.getElementById('download-modal').style.display = 'none';
+            window.location.href = '/home';
         }
 
         function clearCommentBox() {
