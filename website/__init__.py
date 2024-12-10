@@ -143,6 +143,7 @@ def create_app(test_config=None):
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
                     steps = ship.get_transfer_steps(load_containers, session['unload_containers'])
+                    
                     session['steps'] = [
                         {
                             'op': step.op,
@@ -383,6 +384,8 @@ def create_app(test_config=None):
 
                     if next_page == 'unload':
                         return redirect(url_for('unload'))
+                    elif next_page == 'balance':
+                        return redirect(url_for('balance'))
 
         return render_template('upload.html', next_page=next_page)
 
