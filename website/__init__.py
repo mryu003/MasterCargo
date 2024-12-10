@@ -567,58 +567,24 @@ def create_app(test_config=None):
                 selected_cells = json.loads(items)
 
                 try:
-                    print("Original Grid (Before):")
-                    for row in ship_grid:
-                        print([cell.name if cell else "UNUSED" for cell in row])
-
+                    # Unloading
                     for cell in selected_cells:
-                        # Flipping
                         display_row = cell['row']
                         original_row = len(ship_grid) - 1 - display_row
                         original_col = cell['col']
 
-                        if not (0 <= original_row < len(ship_grid)) or not (0 <= original_col < len(ship_grid[0])):
-                            raise ValueError(f"Invalid index: ({original_row}, {original_col})")
-
-                        # Logic for flipping
+                        # Containers falling
                         for row in range(original_row, len(ship_grid) - 1):
                             if ship_grid[row + 1][original_col] and ship_grid[row + 1][original_col].name == "NAN":
                                 break
-
-                            # Gravity Thingy
                             ship_grid[row][original_col] = ship_grid[row + 1][original_col]
                             ship_grid[row + 1][original_col] = None
 
-                        if ship_grid[len(ship_grid) - 1][original_col] is not None and ship_grid[len(ship_grid) - 1][
-                            original_col].name != "NAN":
+                        if ship_grid[len(ship_grid) - 1][original_col] and ship_grid[len(ship_grid) - 1][original_col].name != "NAN":
                             ship_grid[len(ship_grid) - 1][original_col] = None
 
-                    print("Original Grid (After Gravity Logic):")
-                    for row in ship_grid:
-                        print([cell.name if cell else "UNUSED" for cell in row])
-
-                    # Flip it again
-                    updated_grid = [
-                        [
-                            {
-                                'name': cell.name if cell else 'UNUSED',
-                                'weight': cell.weight if cell else 0,
-                            }
-                            for cell in row
-                        ]
-                        for row in ship_grid[::-1]
-                    ]
-
-                    print("Flipped Grid for Display:")
-                    for row in updated_grid:
-                        print([cell['name'] for cell in row])
-
-                    base_name = os.path.basename(manifest_path).rsplit('.', 1)[0]
-                    outbound_file_name = f"{base_name}OUTBOUND.txt"
-                    manifest_folder = os.path.dirname(manifest_path)
-                    outbound_file_path = os.path.join(manifest_folder, outbound_file_name)
-
-                    with open(outbound_file_path, 'w') as manifest_file:
+                    # Saving manifest back again
+                    with open(manifest_path, 'w') as manifest_file:
                         for row_idx, row in enumerate(ship_grid):
                             for col_idx, cell in enumerate(row):
                                 manifest_file.write(
@@ -626,17 +592,16 @@ def create_app(test_config=None):
                                     f"{{{cell.weight if cell else 0:05}}}, {cell.name if cell else 'UNUSED'}\n"
                                 )
 
-                    return render_template(
-                        'unload.html',
-                        prev_grid=updated_grid,
-                        enumerate=enumerate,
-                    )
+                    return redirect(url_for('load'))
 
                 except Exception as e:
                     print(f"Error during unloading: {e}")
                     return f"Error during unloading process: {e}", 500
 
         return render_template('unload.html', prev_grid=session['initial_grid'], enumerate=enumerate)
+
+
+
 
     #hardcoded steps
     steps = [
