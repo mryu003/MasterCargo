@@ -80,7 +80,7 @@ def create_app(test_config=None):
                 with open(log_file_path, 'a') as file:
                     file.write(f"{timestamp}\t{username} signed in \n")
                 
-                return '', 204
+                return redirect(url_for('home'))
 
         # Get ast visited page from cookie and session and display 
         last_visited_cookie = request.cookies.get('last_visited', 'None')
@@ -199,7 +199,6 @@ def create_app(test_config=None):
                         }
                         for step in sift_steps
                     ]
-                    log_entry = f"{get_pst_time()}\tSIFT steps initiated for manifest {os.path.basename(manifest_path)}.\n"
                 else:
                     session['balance_steps'] = [
                         {
@@ -222,11 +221,6 @@ def create_app(test_config=None):
                         }
                         for step in balance_steps
                     ]
-                    log_entry = f"{get_pst_time()}\tBalance steps initiated for manifest {os.path.basename(manifest_path)}.\n"
-
-                log_file_path = os.path.join(app.config['LOG_FOLDER'], f"KeoghsPort{datetime.now().year}.txt")
-                with open(log_file_path, 'a') as log_file:
-                    log_file.write(log_entry)
 
                 steps = session['balance_steps']
                 total_steps = len(steps)
@@ -266,7 +260,7 @@ def create_app(test_config=None):
         step = steps[current_step]
 
         def adjust_position(pos):
-            return [p + 1 for p in pos] if pos != [-1, -1] else "Truck"
+            return [p + 1 for p in pos] if pos != [-1, -1] else "BUFFER"
 
         step['from_pos'] = adjust_position(step['from_pos'])
         step['to_pos'] = adjust_position(step['to_pos'])
@@ -274,10 +268,12 @@ def create_app(test_config=None):
         curr_year = datetime.now().year
         log_file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], log_file_name)
-        operation_mapping = {"UNLOAD": "offloaded", "MOVE": "moved", "LOAD": "loaded"}
-        operation = operation_mapping.get(step['op'].upper(), step['op'].lower())
-        timestamp = get_pst_time()
-        log_entry = f"{timestamp}\t{step['name']} {operation} from {step['from_pos']} to {step['to_pos']}\n"
+
+        from_pos = 'BUFFER' if step['op'] == 'SHIP' else step['from_pos']
+        to_pos = 'BUFFER' if step['op'] == 'BUFFER' else step['to_pos']
+
+        log_entry = f"{get_pst_time()}\t{step['name']} moved from {from_pos} to {to_pos}\n"
+
         with open(log_file_path, 'a') as log_file:
             log_file.write(log_entry)
 
@@ -301,6 +297,7 @@ def create_app(test_config=None):
             enumerate=enumerate,
             grid_length=len(display_grid)
         )
+
 
     @app.route('/download_balanced/<filename>')
     def download_balanced(filename):
@@ -501,9 +498,10 @@ def create_app(test_config=None):
 
             with open(log_file_path, 'a') as file:
                 file.write(f"{timestamp}\tComment: {comment}\n")
-
-        return '', 204
         
+        return redirect(url_for('home'))
+
+
     @app.route('/logout', methods=['POST'])
     def logout():
         curr_year = datetime.now().year

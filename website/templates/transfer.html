@@ -57,6 +57,7 @@
             <div class="content">
                 {% if step %}
                     <h3>
+                        Step {{ current_step + 1 }} of {{ total_steps }}: 
                         {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
                     </h3>
                 {% endif %}

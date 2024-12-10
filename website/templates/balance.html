@@ -12,47 +12,84 @@
     <header>
         <nav>
             <div class="log-file">
-                <button class="close-year" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
+                <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
                 <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-
-            <button class="sign-in-button modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button>
         </nav>
     </header>
+
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sign-in-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <h2> Sign In </h2>
+                <form method="POST" action="/home">
+                    <label for="username"> Enter Your Name: </label>
+                    <input type="text" name="username" class="usernameInput" required>
+                    <button type="submit" class="sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <main>
         {% if completed %}
             <div class="completed-container">
-                <button class="download-button" onclick="downloadAndRedirect('{{ outbound_file_path }}')">
+                <button class="download-button" onclick="downloadAndSaveFile()">
                     Download {{ outbound_file_name }}
                 </button>
             </div>
         {% else %}
             <div class="content">
+                {% if step %}
+                    <h3>
+                        Step {{ current_step + 1 }} of {{ total_steps }}:
+                        MOVE {{ step['name'] }} from
+                        {% if step['op'] == 'SHIP' %}BUFFER{% else %}{{ step['from_pos'] }}{% endif %}
+                        to
+                        {% if step['op'] == 'BUFFER' %}BUFFER{% else %}{{ step['to_pos'] }}{% endif %}
+                        ({{ step['time'] }} minutes)
+                    </h3>
+                {% endif %}
                 <div class="grid-container">
                     {% for row_index, row in enumerate(display_grid, start=1) %}
                         {% for col_index, cell in enumerate(row, start=1) %}
                             <div 
                                 class="grid-cell 
-                                    {% if [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
-                                    {% elif [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
-                                    {% elif cell.name == 'UNUSED' %}unused
-                                    {% elif cell.name == 'NAN' %}nan
-                                    {% else %}filled{% endif %}">
+                                    {% if step['op'] == 'BUFFER' and [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                    {% elif step['op'] == 'SHIP' and [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                    {% elif step['op'] != 'BUFFER' and step['op'] != 'SHIP' %}
+                                        {% if [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                        {% elif [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                        {% elif cell.name == 'UNUSED' %}unused
+                                        {% elif cell.name == 'NAN' %}nan
+                                        {% else %}filled{% endif %}
+                                    {% elif cell.name != 'UNUSED' and cell.name != 'NAN' %}filled
+                                    {% endif %}">
                                 {{ cell.name }}<br>{{ cell.weight }}
                             </div>
                         {% endfor %}
                     {% endfor %}
                 </div>
-                {% if step %}
-                    <h2>
-                        {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
-                    </h2>
-                {% endif %}
+                
+                
+                
                 <form method="POST">
                     <input type="hidden" name="current_step" value="{{ current_step }}">
                     {% if current_step < total_steps %}
-                        <button type="submit" class="next-button">Next Step</button>
+                        <button type="submit" class="submitButton">Next Step</button>
                     {% endif %}
                 </form>
             </div>
@@ -61,75 +98,67 @@
 
     <footer>
         <div class="comment-section">
-            <h3>Add Comment</h3>
+            <p>Add comment</p>
             <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
-                <textarea name="comment" id="commentBox" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-                <button type="submit" class="addCommentButton">Add Comment</button>
+                <textarea id="commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
             </form>
         </div>
     </footer>
 
-    <div id="closeYearModal" class="modal">
-        <div class="modalContent">
-            <p>Are you sure you want to close the year?</p>
-            <button class="confirmButton" onclick="confirmCloseYear()">Yes</button>
-            <button class="cancelButton" onclick="document.getElementById('closeYearModal').style.display = 'none'">No</button>
-        </div>
-    </div>
-
-    <div id="signInModal" class="modal">
-        <div class="modalContent">
-            <span class="close" onclick="document.getElementById('signInModal').style.display='none'"> &times;</span>
-            <h2> Sign In </h2>
-            <form method="POST" action="/home">
-                <label for="username"> Enter Your Name: </label>
-                <input type="text" name="username" class="usernameInput" required>
-            </form>
-        </div>
-    </div>
-
     <script>
         window.onclick = function(event) {
-            if (event.target == document.getElementById('signInModal')) {
-                document.getElementById('signInModal').style.display = "none";
+            if (event.target == document.getElementById('sign-in-modal')) {
+                document.getElementById('sign-in-modal').style.display = "none";
             }
         }
     
-        async function downloadAndRedirect(filePath) {
+        async function downloadAndSaveFile() {
             try {
-                const response = await fetch(filePath);
-
-                if (!response.ok) {
-                    throw new Error("Failed to download the file.");
+                const response = await fetch("{{ outbound_file_path }}");
+                const fileContent = await response.text();
+    
+                if (window.showSaveFilePicker) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: "{{ outbound_file_name }}",
+                        types: [
+                            {
+                                description: "Text Files",
+                                accept: {
+                                    "text/plain": [".txt"]
+                                }
+                            }
+                        ]
+                    });
+    
+                    const writable = await handle.createWritable();
+                    await writable.write(fileContent);
+                    await writable.close();
+    
+                    alert("File saved successfully!");
+                } else {
+                    const blob = new Blob([fileContent], { type: "text/plain" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "{{ outbound_file_name }}";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+    
+                    alert("Download complete! Did you send the manifest file? ");
                 }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.style.display = "none";
-                a.href = url;
-                a.download = "{{ outbound_file_name }}";
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                alert("Download complete! Did you send the manifest file? ");
-
-                window.location.href = "/home";
+    
+                finishOperation();
             } catch (error) {
-                console.error("Error during download and redirect:", error);
+                console.error("Error downloading file:", error);
                 alert("An error occurred while downloading the file.");
             }
         }
     
-        function confirmCloseYear() {
-            fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({action: 'Log Closed'}),
-            });
-            window.location.href = '/';
+        function finishOperation() {
+            window.location.href = "/home";
         }
 
         function clearCommentBox() {
@@ -138,9 +167,8 @@
                 if (commentBox) {
                     commentBox.value = ''; 
                 }
-            },100);
+            }, 100);
         }
-        
     </script>
 </body>
 
