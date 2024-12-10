@@ -308,14 +308,16 @@ class Balance(Node):
         return penalty
     
     def __hash__(self):
-        return hash(str(self.from_pos[0]) + str(self.from_pos[1]) + self.name + str(self.weight) + str(self.time) + str(self.to_pos[0]) + str(self.to_pos[1]))
+        return hash(str(self.from_pos[0]) + str(self.from_pos[1]) + self.name + str(self.weight) + str(self.time) + str(self.to_pos[0]) + str(self.to_pos[1]) + str(self.step))
     
     def __eq__(self, other):
         pos = self.from_pos == other.from_pos
         name = self.name == other.name
         weight = self.weight == other.weight
         time = self.time == other.time
-        return pos and name and weight and time
+        step = self.step == other.step
+        to_pos = self.to_pos == other.to_pos
+        return pos and name and weight and time and step and to_pos
     
 class Sift(Node):
     """
