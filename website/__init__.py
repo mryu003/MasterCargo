@@ -2,6 +2,7 @@ from flask import Flask, render_template, send_from_directory, request, redirect
 import time
 import os
 import json
+import shutil
 from datetime import datetime
 from pytz import timezone
 
@@ -307,6 +308,8 @@ def create_app(test_config=None):
                         f"{{{cell['weight']:05}}}, {cell['name']}\n"
                     )
 
+        clearManifestFolder(app.config['MANIFEST_FOLDER'])
+
         return render_template(
             'balance.html',
             step=step,
@@ -462,6 +465,8 @@ def create_app(test_config=None):
         with open(log_file_path, 'a') as log_file:
             log_file.write(log_entry)
 
+        clearManifestFolder(app.config['MANIFEST_FOLDER'])
+
         return render_template(
             'transfer.html',
             step=step,
@@ -544,3 +549,11 @@ def create_app(test_config=None):
         return resp
 
     return app
+
+def clearManifestFolder(folder_path):
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path,filename)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
