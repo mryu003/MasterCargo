@@ -149,7 +149,7 @@ def create_app(test_config=None):
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
                     steps = ship.get_transfer_steps(load_containers, session['unload_containers'])
-                    
+                   
                     session['steps'] = [
                         {
                             'op': step.op,
