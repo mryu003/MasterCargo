@@ -142,7 +142,12 @@ def create_app(test_config=None):
                     ship = Ship(ship_grid)
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
-                    unload_containers = [[0, 1], [0, 2]]  # This is temporary
+                    unload_containers = [
+                        [row_idx, col_idx]
+                        for row_idx, row in enumerate(ship_grid)
+                        for col_idx, cell in enumerate(row)
+                        if cell and cell.name not in ['UNUSED', 'NAN']
+                    ]
                     steps = ship.get_transfer_steps(load_containers, unload_containers)
                     session['steps'] = [
                         {
