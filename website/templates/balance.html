@@ -12,8 +12,8 @@
     <header>
         <nav>
             <div class="log-file">
-                <button class="close-year" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
-                <button class="download-log" onclick="location.href='/download'"> Log File </button>
+                <button class="close-year" onclick="openPassCloseYear()">Close Year</button>
+                <button class="download-log" onclick="openPassDownloadLog()">Log File</button>
             </div>
 
             <button class="sign-in-button modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
@@ -88,6 +88,22 @@
         </div>
     </div>
 
+    <div id = "password-modal" class = "modal">
+        <div class = "content-background">
+            <div class = "modal-content">
+                <h2>Enter Password</h2>
+                <form id = "password-form" method = "POST">
+                    <label for = "password-input">Password:</label>
+                    <input type = "password" id = "password-input" class = "usernameInput" placeholder="Enter password" required>
+                    <div class = "close-buttons">
+                        <button type = "submit" class = "confirm-close">Confirm</button>
+                        <button type = "button" class = "cancel-close" onclick = "closePasswordModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         window.onclick = function(event) {
             if (event.target == document.getElementById('signInModal')) {
@@ -140,7 +156,41 @@
                 }
             },100);
         }
-        
+        function openPassCloseYear() {
+        document.getElementById('password-modal').style.display = 'block';
+        document.getElementById('password-form').onsubmit = function(event){
+            event.preventDefault();
+            password = document.getElementById('password-input').value;
+            if (password === "keogh123"){
+                closePasswordModal();
+                confirmCloseYear();
+                alert("Successful Closed Year");
+            }
+            else{
+                alert("Incorrect password");
+            }
+            password = document.getElementById('password-input').value = "";
+        };
+        }
+        function openPassDownloadLog() {
+            document.getElementById('password-modal').style.display = 'block';
+            document.getElementById('password-form').onsubmit = function(event){
+                event.preventDefault();
+                password = document.getElementById('password-input').value;
+                if (password === "keogh123"){
+                    closePasswordModal();
+                    location.href = '/download'
+                    alert("Successfully Downloaded Log File");
+                }
+                else{
+                    alert("Incorrect password");
+                }
+                password = document.getElementById('password-input').value = "";
+            };
+        }
+        function closePasswordModal() {
+            document.getElementById('password-modal').style.display = 'none';
+        }
     </script>
 </body>
 
