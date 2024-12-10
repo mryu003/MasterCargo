@@ -1,87 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BalanceShip</title>
-    <link rel = "stylesheet" href = "{{ url_for('static', filename = 'css/styles.css') }}"> 
-    
-
-    <script>
-        //Pop-Up button 
-        window.onload = function(){
-            if(confirm("Are you ready to Balance?")){
-                console.log("User is ready to balance");
-            } else {
-                console.log("User is not ready to balance.");
-            }
-             // Create a 12x8 grid for our cargo - Temporary Grid for visuals 
-            const gridContainer = document.querySelector('.grid-container');
-            for(let i = 0; i < 12 * 8; ++i){
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell';
-                // Give each cell a unique id for load/unload purposes
-                cell.id = `cell-${i}`;
-                cell.onclick = function() { 
-                    AdjustContainer(cell); 
-                };
-                gridContainer.appendChild(cell);
-            }
-        };
-
-        // Function to adjust the cells
-        function AdjustContainer(cell) {
-          
-        }
-        
-    </script>
+    <title>Balance Operations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
+
 <body>
-    <!-- <header class="page-title">
-        <h1>Balancing the Cargo Ship</h1>
-    </header> -->
     <header>
         <nav>
-            <div class="logFile">
-                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
-                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            <div class="log-file">
+                <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
+                <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button>
         </nav>
     </header>
 
-    <div id = "signInModal" class = "modal">
-        <div class = "modalContent">
-            <span class = "close" onclick = "document.getElementById('signInModal').style.display='none'"> &times;</span>
-            <h2> Sign In </h2>
-            <form method = "POST" action = "/home">
-                <label for = "username"> Enter Your Name: </label>
-                <input type = "text" name = "username" class = "usernameInput" required>
-                <button type = "submit" class = "signinButton"> Sign In </button>
-            </form>
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div id="sign-in-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <h2> Sign In </h2>
+                <form method="POST" action="/home">
+                    <label for="username"> Enter Your Name: </label>
+                    <input type="text" name="username" class="usernameInput" required>
+                    <button type="submit" class="sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        {% if completed %}
+            <div class="completed-container">
+                <button class="download-button" onclick="downloadAndSaveFile()">
+                    Download {{ outbound_file_name }}
+                </button>
+            </div>
+        {% else %}
+            <div class="content">
+                {% if step %}
+                    <h3>
+                        Step {{ current_step + 1 }} of {{ total_steps }}:
+                        MOVE {{ step['name'] }} from
+                        {% if step['op'] == 'SHIP' %}BUFFER{% else %}{{ step['from_pos'] }}{% endif %}
+                        to
+                        {% if step['op'] == 'BUFFER' %}BUFFER{% else %}{{ step['to_pos'] }}{% endif %}
+                        ({{ step['time'] }} minutes)
+                    </h3>
+                {% endif %}
+                <div class="grid-container">
+                    {% for row_index, row in enumerate(display_grid, start=1) %}
+                        {% for col_index, cell in enumerate(row, start=1) %}
+                            <div 
+                                class="grid-cell 
+                                    {% if step['op'] == 'BUFFER' and [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                    {% elif step['op'] == 'SHIP' and [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                    {% elif step['op'] != 'BUFFER' and step['op'] != 'SHIP' %}
+                                        {% if [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                        {% elif [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                        {% elif cell.name == 'UNUSED' %}unused
+                                        {% elif cell.name == 'NAN' %}nan
+                                        {% else %}filled{% endif %}
+                                    {% elif cell.name != 'UNUSED' and cell.name != 'NAN' %}filled
+                                    {% endif %}">
+                                {{ cell.name }}<br>{{ cell.weight }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                
+                
+                
+                <form method="POST">
+                    <input type="hidden" name="current_step" value="{{ current_step }}">
+                    {% if current_step < total_steps %}
+                        <button type="submit" class="submitButton">Next Step</button>
+                    {% endif %}
+                </form>
+            </div>
+        {% endif %}
+    </main>
+
+    <footer>
+        <div class="comment-section">
+            <p>Add comment</p>
+            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
+                <textarea id="commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
+            </form>
+        </div>
+    </footer>
 
     <script>
         window.onclick = function(event) {
-            if (event.target == document.getElementById('signInModal')) {
-                document.getElementById('signInModal').style.display = "none";
+            if (event.target == document.getElementById('sign-in-modal')) {
+                document.getElementById('sign-in-modal').style.display = "none";
             }
         }
+    
+        async function downloadAndSaveFile() {
+            try {
+                const response = await fetch("{{ outbound_file_path }}");
+                const fileContent = await response.text();
+    
+                if (window.showSaveFilePicker) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: "{{ outbound_file_name }}",
+                        types: [
+                            {
+                                description: "Text Files",
+                                accept: {
+                                    "text/plain": [".txt"]
+                                }
+                            }
+                        ]
+                    });
+    
+                    const writable = await handle.createWritable();
+                    await writable.write(fileContent);
+                    await writable.close();
+    
+                    alert("File saved successfully!");
+                } else {
+                    const blob = new Blob([fileContent], { type: "text/plain" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "{{ outbound_file_name }}";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+    
+                    alert("Download complete! Did you send the manifest file? ");
+                }
+    
+                finishOperation();
+            } catch (error) {
+                console.error("Error downloading file:", error);
+                alert("An error occurred while downloading the file.");
+            }
+        }
+    
+        function finishOperation() {
+            window.location.href = "/home";
+        }
+
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            }, 100);
+        }
     </script>
-    <div class="content">
-        <div class="grid-container">
-        </div>
-    </div>
-
-
-    <div class="comment-section">
-        <h3>Add Comment</h3>
-        <form method="POST" action="/add_comment">
-            <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-            <button type="submit" class="submitButton">Add Comment</button>
-        </form>
-    </div>
 </body>
 
 </html>

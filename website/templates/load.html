@@ -1,61 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading Page</title>
     <link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}"> 
 </head>
+
 <body>
-    <!-- <header class="page-title">
-        <h1>Loading Page</h1>
-    </header> -->
     <header>
         <nav>
-            <div class="logFile">
-                <button class="closeYear" onclick="document.getElementById('closeYearModal').style.display = 'block'"> Close Year </button>
-                <button class="downloadLog" onclick="location.href='/download'"> Log File </button>
+            <div class="log-file">
+                <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
+                <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-            <button class="signInButton modal-button" onclick="document.getElementById('signInModal').style.display='block'"> Sign In </button> 
+
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button> 
         </nav>
     </header>
 
-    <div id = "signInModal" class = "modal">
-        <div class = "modalContent">
-            <span class = "close" onclick = "document.getElementById('signInModal').style.display='none'"> &times;</span>
-            <h2> Sign In </h2>
-            <form method = "POST" action = "/home">
-                <label for = "username"> Enter Your Name: </label>
-                <input type = "text" name = "username" class = "usernameInput" required>
-                <button type = "submit" class = "signinButton"> Sign In </button>
-            </form>
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('signInModal')) {
-                document.getElementById('signInModal').style.display = "none";
-            }
-        }
-    </script>
+    <div id = "sign-in-modal" class = "modal">
+        <div class="content-background">
+            <div class = "modal-content">
+                <h2> Sign In </h2>
+                <form method = "POST" action = "/home">
+                    <label for = "username"> Enter Your Name: </label>
+                    <input type = "text" name = "username" class = "usernameInput" required>
+                    <button type = "submit" class = "sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="loginContainer">
         <div class="itemAboveBox">
-            <p>New Item to Load:</p>
+            <h2>Enter containers to load.</h2>
         </div>
 
-        <!-- Form to input new item -->
         <form id="ItemForm">
-            <label for="itemInput">Enter an item to load:</label>
-            <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
-            <label for="weightInput">Enter weight (in kg):</label>
-            <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
+            <div class="container-name">
+                <label for="itemInput">Container Name</label>
+                <input type="text" id="itemInput" class="usernameInput" placeholder="Item Name..." required>
+            </div>
+            <div class="container-weight">
+                <label for="weightInput">Container weight (kg):</label>
+                <input type="number" id="weightInput" class="usernameInput" placeholder="Item Weight..." required>
+            </div>
             <button type="submit" class="signInButton">Add Item</button>
         </form>
         
-        <h2>Loaded Items:</h2>
+        <h2>Items to load:</h2>
         <ul id="ItemList">
-            <!-- Render existing items from session -->
             {% for item in loaded_items %}
                 <li>
                     {{ item.name }} - {{ item.weight }} kg
@@ -63,18 +71,25 @@
                 </li>
             {% endfor %}
         </ul>
-
-        <!-- Form that submits all items to the server -->
-        <form id="SubmitForm" method="POST" action="{{ url_for('load') }}">
-            <input type="hidden" name="items" id="hiddenItems">
-            <button type="submit" class="loginButton">Submit</button>
-        </form>
     </div>
 
-    <script>
-        // Array to hold items - temporarily 
-        const arrayOfItems = [];
+    <form id="SubmitForm" method="POST" action="{{ url_for('load') }}" style="position: relative;">
+        <input type="hidden" name="items" id="hiddenItems">
+        <button type="submit" class="submitButton">Submit</button>
+    </form>
 
+    <footer>
+        <div class="comment-section">
+            <p>Add comment</p>
+            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
+                <textarea id = "commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
+            </form>
+        </div>
+    </footer>
+
+    <script>
+        const arrayOfItems = [];
         const itemForm = document.getElementById('ItemForm');
         const itemInput = document.getElementById('itemInput');
         const weightInput = document.getElementById('weightInput');
@@ -85,10 +100,8 @@
         // Add item to the list
         itemForm.addEventListener('submit', function (event) {
             event.preventDefault();
-            // Read input values
             const newName = itemInput.value.trim();
             const newWeight = parseFloat(weightInput.value);
-            // Check if the name and weight are valid
             if (newName && !isNaN(newWeight)) {
                 arrayOfItems.push({ name: newName, weight: newWeight });
                 displayItems();
@@ -114,8 +127,6 @@
         // Submit items to server
         submitForm.addEventListener('submit', function (event) {
             event.preventDefault();
-
-            // Add items to hidden input and submit form
             hiddenItems.value = JSON.stringify(arrayOfItems);
             submitForm.submit();
         });
@@ -124,27 +135,42 @@
         function displayItems() {
             itemList.innerHTML = ''; 
             arrayOfItems.forEach((item) => {
-                // Create a new list item element
                 const listItem = document.createElement('li');
                 listItem.textContent = `${item.name} - ${item.weight} kg`;
-
                 const removeButton = document.createElement('button');
                 removeButton.textContent = 'Remove';
                 removeButton.classList.add('removeButton');
                 removeButton.setAttribute('data-name', item.name);
-
                 listItem.appendChild(removeButton);
                 itemList.appendChild(listItem);
             });
         }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('sign-in-modal')) {
+                document.getElementById('sign-in-modal').style.display = "none";
+            }
+        }
+    
+        function confirmCloseYear() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({action: 'Log Closed'}),
+            });
+            window.location.href = '/';
+        }
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
+        }
     </script>
 
-    <div class="comment-section">
-        <h3>Add Comment</h3>
-        <form method="POST" action="/add_comment">
-            <textarea name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-            <button type="submit" class="submitButton">Add Comment</button>
-        </form>
-    </div>
 </body>
 </html>
