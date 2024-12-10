@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Balance Operations</title>
+    <title>Transfer Operations</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
@@ -15,7 +15,8 @@
                 <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
                 <button class="download-log" onclick="location.href='/download'"> Log File </button>
             </div>
-            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button>
+
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button> 
         </nav>
     </header>
 
@@ -31,14 +32,14 @@
         </div>
     </div>
 
-    <div id="sign-in-modal" class="modal">
+    <div id = "sign-in-modal" class = "modal">
         <div class="content-background">
-            <div class="modal-content">
+            <div class = "modal-content">
                 <h2> Sign In </h2>
-                <form method="POST" action="/home">
-                    <label for="username"> Enter Your Name: </label>
-                    <input type="text" name="username" class="usernameInput" required>
-                    <button type="submit" class="sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                <form method = "POST" action = "/home">
+                    <label for = "username"> Enter Your Name: </label>
+                    <input type = "text" name = "username" class = "usernameInput" required>
+                    <button type = "submit" class = "sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
                 </form>
             </div>
         </div>
@@ -51,40 +52,30 @@
                     Download {{ outbound_file_name }}
                 </button>
             </div>
+            
         {% else %}
             <div class="content">
                 {% if step %}
                     <h3>
-                        Step {{ current_step + 1 }} of {{ total_steps }}:
-                        MOVE {{ step['name'] }} from
-                        {% if step['op'] == 'SHIP' %}BUFFER{% else %}{{ step['from_pos'] }}{% endif %}
-                        to
-                        {% if step['op'] == 'BUFFER' %}BUFFER{% else %}{{ step['to_pos'] }}{% endif %}
-                        ({{ step['time'] }} minutes)
+                        Step {{ current_step + 1 }} of {{ total_steps }}: 
+                        {{ step['op'] }} {{ step['name'] }} from {{ step['from_pos'] }} to {{ step['to_pos'] }} ({{ step['time'] }} minutes)
                     </h3>
                 {% endif %}
                 <div class="grid-container">
-                    {% for row_index, row in enumerate(display_grid, start=1) %}
+                    {% for row_index, row in enumerate(grid, start=1) %}
                         {% for col_index, cell in enumerate(row, start=1) %}
                             <div 
                                 class="grid-cell 
-                                    {% if step['op'] == 'BUFFER' and [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
-                                    {% elif step['op'] == 'SHIP' and [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
-                                    {% elif step['op'] != 'BUFFER' and step['op'] != 'SHIP' %}
-                                        {% if [grid_length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
-                                        {% elif [grid_length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
-                                        {% elif cell.name == 'UNUSED' %}unused
-                                        {% elif cell.name == 'NAN' %}nan
-                                        {% else %}filled{% endif %}
-                                    {% elif cell.name != 'UNUSED' and cell.name != 'NAN' %}filled
-                                    {% endif %}">
-                                {{ cell.name }}<br>{{ cell.weight }}
+                                    {% if [grid|length - row_index + 1, col_index] == step['from_pos'] %}from-highlight
+                                    {% elif [grid|length - row_index + 1, col_index] == step['to_pos'] %}to-highlight
+                                    {% elif cell['name'] == 'UNUSED' %}unused
+                                    {% elif cell['name'] == 'NAN' %}nan
+                                    {% else %}filled{% endif %}">
+                                {{ cell['name'] }}<br>{{ cell['weight'] }}
                             </div>
                         {% endfor %}
                     {% endfor %}
                 </div>
-                
-                
                 
                 <form method="POST">
                     <input type="hidden" name="current_step" value="{{ current_step }}">
@@ -96,15 +87,6 @@
         {% endif %}
     </main>
 
-    <footer>
-        <div class="comment-section">
-            <p>Add comment</p>
-            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
-                <textarea id="commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
-                <button type="submit" class="add-comment-button">Add Comment</button>
-            </form>
-        </div>
-    </footer>
 
     <script>
         window.onclick = function(event) {
@@ -113,6 +95,29 @@
             }
         }
     
+        function confirmCloseYear() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({action: 'Log Closed'}),
+            });
+            window.location.href = '/';
+        }
+    </script>
+
+    <footer>
+        <div class="comment-section">
+            <p>Add comment</p>
+            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
+                <textarea id = "commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
+            </form>
+        </div>
+    </footer>
+
+    <script>
         async function downloadAndSaveFile() {
             try {
                 const response = await fetch("{{ outbound_file_path }}");
@@ -167,9 +172,10 @@
                 if (commentBox) {
                     commentBox.value = ''; 
                 }
-            }, 100);
+            },100);
         }
     </script>
+
 </body>
 
 </html>
