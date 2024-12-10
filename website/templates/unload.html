@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unload</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <div class="log-file">
+                <button class="close-year" onclick="document.getElementById('close-year-modal').style.display = 'block'"> Close Year </button>
+                <button class="download-log" onclick="location.href='/download'"> Log File </button>
+            </div>
+
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button>
+        </nav>
+    </header>
+
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sign-in-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <h2> Sign In </h2>
+                <form method="POST" action="/home">
+                    <label for="username"> Enter Your Name: </label>
+                    <input type="text" name="username" class="usernameInput" required>
+                    <button type="submit" class="sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="content">
+            <h3>Select containers to unload</h3>
+            <div class="grid-container">
+                {% for row_index, row in enumerate(prev_grid) %}
+                    {% for col_index, cell in enumerate(row) %}
+                        <div 
+                            class="grid-cell 
+                                {% if cell['name'] == 'UNUSED' %}unused
+                                {% elif cell['name'] == 'NAN' %}nan
+                                {% else %}filled{% endif %}" 
+                            data-position="{{ row_index }},{{ col_index }}"
+                            {% if cell['name'] != 'UNUSED' and cell['name'] != 'NAN' %}
+                                onclick="toggleUnload(event)"
+                            {% endif %}>
+                            {{ cell['name'] }}<br>{{ cell['weight'] }}
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            <form id="SubmitForm" method="POST" action="{{ url_for('unload') }}">
+                <input type="hidden" name="items" id="hiddenItems">
+                <button type="submit" class="submitButton">Unload Selected Containers</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <div class="comment-section">
+            <p>Add comment</p>
+            <form method="POST" action="/add_comment" onsubmit="clearCommentBox()">
+                <textarea id="commentBox" name="comment" placeholder="Type your comment here..." rows="4" cols="150" required></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
+            </form>
+        </div>
+    </footer>
+
+    <script>
+        const selectedItems = [];
+        const hiddenItems = document.getElementById('hiddenItems');
+
+        function toggleUnload(event) {
+            const cell = event.currentTarget;
+            const position = cell.getAttribute('data-position').split(',');
+            const row = parseInt(position[0]);
+            const col = parseInt(position[1]);
+            const name = cell.textContent.split('\n')[0].trim();
+            const weight = parseInt(cell.textContent.split('\n')[1].trim());
+
+            const index = selectedItems.findIndex(item => item.row === row && item.col === col);
+            if (index > -1) {
+                selectedItems.splice(index, 1);
+                cell.classList.remove('to-highlight');
+            } else {
+                selectedItems.push({ row, col, name, weight });
+                cell.classList.add('to-highlight');
+            }
+        }
+
+        document.getElementById('SubmitForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            hiddenItems.value = JSON.stringify(selectedItems);
+            this.submit();
+        });
+
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = '';
+                }
+            }, 100);
+        }
+    </script>
+</body>
+
+</html>
