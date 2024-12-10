@@ -102,14 +102,19 @@
             event.preventDefault();
             const newName = itemInput.value.trim();
             const newWeight = parseFloat(weightInput.value);
-            if (newName && !isNaN(newWeight)) {
+
+            if(newName.length > 255){
+                alert("Container name cannot exceed 255 characters.");
+                return;
+            }
+            if (isNaN(newWeight) || newWeight <= 0 || newWeight > 99999) {
+                alert("Weight should be a positive integer between 0 and 99999.");
+                return;
+            }
                 arrayOfItems.push({ name: newName, weight: newWeight });
                 displayItems();
                 itemInput.value = '';
                 weightInput.value = '';
-            } else {
-                alert("Please provide valid item name and weight!");
-            }
         });
 
         // Remove item from the list
