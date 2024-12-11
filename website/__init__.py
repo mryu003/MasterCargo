@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from pytz import timezone
 
-MANIFEST_FOLDER = './static/manifests'
+MANIFEST_FOLDER = './manifests'
 LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
 
