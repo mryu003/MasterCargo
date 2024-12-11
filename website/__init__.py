@@ -166,7 +166,7 @@ def create_app(test_config=None):
                         for step in steps
                     ]
 
-                    return redirect(url_for('transfer'))
+                    return redirect(url_for('summary'))
                 except Exception as e:
                     print(f"Error processing steps: {e}")
                     return "Error calculating transfer steps.", 400
@@ -542,5 +542,27 @@ def create_app(test_config=None):
 
         return redirect(url_for('index'))
         return resp
+    
+    #hardcoded steps
+    steps = [
+    {'op': 'Move', 'name': 'Container A', 'from_pos': [1, 1], 'to_pos': [2, 1], 'time': 5},
+    {'op': 'Move', 'name': 'Container B', 'from_pos': [1, 2], 'to_pos': [2, 2], 'time': 7},
+    ]
+
+    @app.route('/summary', methods=['GET', 'POST'])
+    def summary():
+        steps = session.get('steps', [])
+        total_steps = len(steps)
+        total_time = sum(step['time'] for step in steps)
+
+        if request.method == 'POST':
+            return redirect(url_for('transfer'))
+
+        return render_template(
+            'summary.html',
+            total_steps=total_steps,
+            total_time=total_time,
+            enumerate=enumerate,
+        )
 
     return app
