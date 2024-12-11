@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from pytz import timezone
 
-MANIFEST_FOLDER = './manifests'
+MANIFEST_FOLDER = './static/manifests'
 LOG_FOLDER = './log_files'
 ALLOWED_EXTENSIONS = {'txt'}
 
@@ -16,6 +16,17 @@ def get_pst_time():
     floored_time = now.replace(second = 0, microsecond = 0)
     return floored_time.strftime('%Y-%m-%d %H:%M')
 
+
+def clear_manifest_folder(folder_path):
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)  # Delete file or symlink
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)  # Delete directory
+        except Exception as e:
+            print(f"Failed to delete {file_path}. Reason: {e}")
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -308,7 +319,7 @@ def create_app(test_config=None):
                         f"{{{cell['weight']:05}}}, {cell['name']}\n"
                     )
 
-        clearManifestFolder(app.config['MANIFEST_FOLDER'])
+        clear_manifest_folder(app.config['MANIFEST_FOLDER'])
 
         return render_template(
             'balance.html',
@@ -465,7 +476,7 @@ def create_app(test_config=None):
         with open(log_file_path, 'a') as log_file:
             log_file.write(log_entry)
 
-        clearManifestFolder(app.config['MANIFEST_FOLDER'])
+        clear_manifest_folder(app.config['MANIFEST_FOLDER'])
 
         return render_template(
             'transfer.html',
@@ -525,6 +536,11 @@ def create_app(test_config=None):
         
         return '', 204
 
+    @app.route('/finish_operation', methods=['POST'])
+    def finish_operation():
+        clear_manifest_folder(app.config['MANIFEST_FOLDER'])
+        
+        return "Operation completed, and manifest folder cleared.", 200
 
     @app.route('/logout', methods=['POST'])
     def logout():
@@ -549,11 +565,3 @@ def create_app(test_config=None):
         return resp
 
     return app
-
-def clearManifestFolder(folder_path):
-    for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path,filename)
-        if os.path.isfile(file_path) or os.path.islink(file_path):
-            os.unlink(file_path)
-        elif os.path.isdir(file_path):
-            shutil.rmtree(file_path)
