@@ -60,7 +60,6 @@ def create_app(test_config=None):
         resp.set_cookie('last_visited', 'index')
         session['last_visited'] = 'index'
 
-
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
         log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
@@ -76,7 +75,6 @@ def create_app(test_config=None):
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
 
-        print("No valid last visited page found. Redirecting to index.")
         resp = make_response(render_template('signin.html', logged_in=False))
         resp.set_cookie('last_visited', 'index')  
         session['last_visited'] = 'index'  
@@ -722,5 +720,21 @@ def create_app(test_config=None):
             total_steps=total_steps,
             total_time=total_time,
         )
+
+    @app.route('/sign_in_init', methods=['POST'])
+    def sign_in_init():
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+        username = request.form.get('username')
+        if username:
+            if not os.path.exists(LOG_FOLDER):
+                os.makedirs(LOG_FOLDER)
+
+            timestamp = get_pst_time()
+            with open(log_file_path, 'a') as file:
+                file.write(f"{timestamp}\t{username} signed in \n")
+            
+            return redirect(url_for('index'))
     
     return app
