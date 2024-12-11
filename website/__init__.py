@@ -77,16 +77,16 @@ def create_app(test_config=None):
             return redirect(url_for('home'))
 
         print("No valid last visited page found. Redirecting to index.")
-        resp = make_response(render_template('home.html', logged_in=False))
+        resp = make_response(render_template('signin.html', logged_in=False))
         resp.set_cookie('last_visited', 'index')  
         session['last_visited'] = 'index'  
+        if request.method == 'POST':
+            return make_response(render_template('home.html'))
         return resp
 
         if os.path.exists(log_file_path):
             return redirect(url_for('home'))
 
-        if request.method == 'POST':
-            return home()
         return resp
 
     @app.route('/home', methods=['GET', 'POST'])
