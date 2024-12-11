@@ -175,6 +175,10 @@ def create_app(test_config=None):
 
     @app.route('/balance', methods=['GET', 'POST'])
     def balance():
+        #resp = make_response(render_template('balance.html'))
+        # resp.set_cooke('last_visited', 'balance')
+        #session['last_visited'] = 'balance'
+        
         from website.classes import get_ship_grid, Ship, Container, get_balance_diff
 
         steps = session.get('balance_steps', [])
@@ -307,7 +311,7 @@ def create_app(test_config=None):
                         f"{{{cell['weight']:05}}}, {cell['name']}\n"
                     )
 
-        return render_template(
+        resp = make_response(render_template(
             'balance.html',
             step=step,
             current_step=current_step,
@@ -315,7 +319,11 @@ def create_app(test_config=None):
             display_grid=display_grid,
             enumerate=enumerate,
             grid_length=len(display_grid)
-        )
+        ))
+        session['last_visited'] = 'balance'
+        resp.set_cookie('last_visited', 'balance')  
+        return resp
+        
 
 
     @app.route('/download_balanced/<filename>')
@@ -355,6 +363,7 @@ def create_app(test_config=None):
     @app.route('/upload', methods=['GET', 'POST'])
     def upload():
         next_page = request.args.get('next', 'home')
+        session['last_visited_page'] = next_page
 
         if request.method == 'POST':
             if 'fileUpload' in request.files:
@@ -533,7 +542,7 @@ def create_app(test_config=None):
         timestamp = get_pst_time()
 
         with open(log_file_path, 'a') as file:
-            file.write(f"{timestamp}    Log File Closed\n")
+            file.write(f"{timestamp}\tLog File Closed\n")
 
         # Make the log file read-only
         #os.chmod(log_file_path, stat.S_IREAD)
