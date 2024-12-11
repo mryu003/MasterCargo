@@ -390,8 +390,8 @@ def create_app(test_config=None):
 
                     if next_page == 'unload':
                         return redirect(url_for('unload'))
-                    elif next_page == 'balance':
-                        return redirect(url_for('balance'))
+                    elif next_page == 'balance_summary':
+                        return redirect(url_for('balance_summary'))
 
         return render_template('upload.html', next_page=next_page)
 
@@ -641,4 +641,87 @@ def create_app(test_config=None):
             
             return '', 204
 
+    @app.route('/balance_summary', methods=['GET', 'POST'])
+    def balance_summary():
+        from website.classes import get_ship_grid, Ship, Container, get_balance_diff
+
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest not found. Please upload a manifest first.", 400
+        try:
+            ship_grid = get_ship_grid(manifest_path)
+            session['initial_grid'] = [
+                [
+                    {
+                        'name': cell.name if cell else 'NAN',
+                        'weight': cell.weight if cell else 0,
+                    }
+                    for cell in row
+                ]
+                for row in ship_grid
+            ]
+            ship = Ship(ship_grid)
+            balance_steps = ship.get_balance_steps()
+            if balance_steps is None:
+                sift_steps = ship.get_sift_steps()
+                session['balance_steps'] = [
+                    {
+                        'op': step.op,
+                        'name': step.name,
+                        'weight': step.weight,
+                        'from_pos': step.from_pos,
+                        'to_pos': step.to_pos,
+                        'time': step.time,
+                        'ship_grid': [
+                            [
+                                {
+                                    'name': cell.name if cell else 'NAN',
+                                    'weight': cell.weight if cell else 0,
+                                }
+                                for cell in row
+                            ]
+                            for row in step.ship_grid
+                        ],
+                    }
+                    for step in sift_steps
+                ]
+            else:
+                session['balance_steps'] = [
+                    {
+                        'op': step.op,
+                        'name': step.name,
+                        'weight': step.weight,
+                        'from_pos': step.from_pos,
+                        'to_pos': step.to_pos,
+                        'time': step.time,
+                        'ship_grid': [
+                            [
+                                {
+                                    'name': cell.name if cell else 'NAN',
+                                    'weight': cell.weight if cell else 0,
+                                }
+                                for cell in row
+                            ]
+                            for row in step.ship_grid
+                        ],
+                    }
+                    for step in balance_steps
+                ]
+            steps = session['balance_steps']
+            total_steps = len(steps)
+            total_time = sum(step['time'] for step in steps)
+
+        except Exception as e:
+            print(f"Error generating balance steps: {e}")
+            return "Error calculating balance steps.", 400
+
+        if request.method == 'POST':
+            return redirect(url_for('balance'))
+
+        return render_template(
+            'balance_summary.html',
+            total_steps=total_steps,
+            total_time=total_time,
+        )
+    
     return app
