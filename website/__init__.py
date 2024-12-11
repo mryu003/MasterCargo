@@ -22,11 +22,11 @@ def clear_manifest_folder(folder_path):
         file_path = os.path.join(folder_path, filename)
         try:
             if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)  # Delete file or symlink
+                os.unlink(file_path)  
             elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)  # Delete directory
+                shutil.rmtree(file_path) 
         except Exception as e:
-            print(f"Failed to delete {file_path}. Reason: {e}")
+            print(f"Failed deleting {file_path}: {e}")
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -540,7 +540,7 @@ def create_app(test_config=None):
     def finish_operation():
         clear_manifest_folder(app.config['MANIFEST_FOLDER'])
         
-        return "Operation completed, and manifest folder cleared.", 200
+        return "Manifest folder cleared.", 200
 
     @app.route('/logout', methods=['POST'])
     def logout():
