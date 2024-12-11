@@ -643,8 +643,7 @@ def create_app(test_config=None):
 
     @app.route('/balance_summary', methods=['GET', 'POST'])
     def balance_summary():
-        from website.classes import get_ship_grid, Ship, Container, get_balance_diff
-
+        from website.classes import get_ship_grid, Ship
         manifest_path = session.get('manifest_path')
         if not manifest_path:
             return "Manifest not found. Please upload a manifest first.", 400
@@ -662,7 +661,29 @@ def create_app(test_config=None):
             ]
             ship = Ship(ship_grid)
             balance_steps = ship.get_balance_steps()
-            if balance_steps is None:
+            if balance_steps:
+                session['balance_steps'] = [
+                    {
+                        'op': step.op,
+                        'name': step.name,
+                        'weight': step.weight,
+                        'from_pos': step.from_pos,
+                        'to_pos': step.to_pos,
+                        'time': step.time,
+                        'ship_grid': [
+                            [
+                                {
+                                    'name': cell.name if cell else 'NAN',
+                                    'weight': cell.weight if cell else 0,
+                                }
+                                for cell in row
+                            ]
+                            for row in step.ship_grid
+                        ],
+                    }
+                    for step in balance_steps
+                ]
+            else:
                 sift_steps = ship.get_sift_steps()
                 session['balance_steps'] = [
                     {
@@ -684,28 +705,6 @@ def create_app(test_config=None):
                         ],
                     }
                     for step in sift_steps
-                ]
-            else:
-                session['balance_steps'] = [
-                    {
-                        'op': step.op,
-                        'name': step.name,
-                        'weight': step.weight,
-                        'from_pos': step.from_pos,
-                        'to_pos': step.to_pos,
-                        'time': step.time,
-                        'ship_grid': [
-                            [
-                                {
-                                    'name': cell.name if cell else 'NAN',
-                                    'weight': cell.weight if cell else 0,
-                                }
-                                for cell in row
-                            ]
-                            for row in step.ship_grid
-                        ],
-                    }
-                    for step in balance_steps
                 ]
             steps = session['balance_steps']
             total_steps = len(steps)
