@@ -1,49 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Summary</title>
-    <style>
-        body {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 20px 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-    <div class="container">
-        <p>This transfer will require {{ total_steps }} step(s), taking {{ total_time }} minutes.</p>
-        <form method="POST">
-            <button class="button" type="submit">Start transfer</button>
-        </form>
+    <header>
+        <nav>
+            <div class="log-file">
+                <button class="close-year" onclick="openPassCloseYear()">Close Year</button>
+                <button class="download-log" onclick="openPassDownloadLog()">Log File</button>
+            </div>
+            <button class="sign-in-button modal-button" onclick="document.getElementById('sign-in-modal').style.display='block'"> Sign In </button>
+        </nav>
+    </header>
+
+    <div id="close-year-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <p>Are you sure you want to close the year?</p>
+                <div class="close-buttons">
+                    <button class="confirm-close" onclick="confirmCloseYear()">Yes</button>
+                    <button class="cancel-close" onclick="document.getElementById('close-year-modal').style.display = 'none'">No</button>
+                </div>
+            </div>
+        </div>
     </div>
-</body>
+
+    <div id = "password-modal" class = "modal">
+        <div class = "content-background">
+            <div class = "modal-content">
+                <h2>Enter Password</h2>
+                <form id = "password-form" method = "POST">
+                    <label for = "password-input">Password:</label>
+                    <input type = "password" id = "password-input" class = "usernameInput" placeholder="Enter password" required>
+                    <div class = "close-buttons">
+                        <button type = "submit" class = "confirm-close">Confirm</button>
+                        <button type = "button" class = "cancel-close" onclick = "closePasswordModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="sign-in-modal" class="modal">
+        <div class="content-background">
+            <div class="modal-content">
+                <h2> Sign In </h2>
+                <form method="POST" action="/home">
+                    <label for="username"> Enter Your Name: </label>
+                    <input type="text" name="username" class="usernameInput" required>
+                    <button type="submit" class="sign-in-button" onclick="document.getElementById('sign-in-modal').style.display='none'"> Sign In </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="summary-page">
+            <div class="summary-container">
+                <h1>Operation Summary</h1>
+                <p>Total Steps: {{ total_steps }}</p>
+                <p>Total Time: {{ total_time }} minutes</p>
+                <form method="POST">
+                    <button type="submit">Proceed to Transfer</button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('sign-in-modal')) {
+                document.getElementById('sign-in-modal').style.display = "none";
+            }
+        }
+
+        function confirmCloseYear() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({action: 'Log Closed'}),
+            });
+            window.location.href = '/';
+        }
+        function clearCommentBox() {
+            setTimeout(() => {
+                const commentBox = document.getElementById('commentBox');
+                if (commentBox) {
+                    commentBox.value = ''; 
+                }
+            },100);
+        }
+
+        function openPassCloseYear() {
+        document.getElementById('password-modal').style.display = 'block';
+        document.getElementById('password-form').onsubmit = function(event){
+            event.preventDefault();
+            password = document.getElementById('password-input').value;
+            if (password === "keogh123"){
+                closePasswordModal();
+                confirmCloseYear();
+            }
+            else{
+                alert("Incorrect password");
+            }
+            password = document.getElementById('password-input').value = "";
+        };
+        }
+        function openPassDownloadLog() {
+            document.getElementById('password-modal').style.display = 'block';
+            document.getElementById('password-form').onsubmit = function(event){
+                event.preventDefault();
+                password = document.getElementById('password-input').value;
+                if (password === "keogh123"){
+                    closePasswordModal();
+                    location.href = '/download'
+                }
+                else{
+                    alert("Incorrect password");
+                }
+                password = document.getElementById('password-input').value = "";
+            };
+        }
+        function closePasswordModal() {
+            document.getElementById('password-modal').style.display = 'none';
+        }
+    </script>
+    <footer>
+        <div class="comment-section">
+            <p>Add comment</p>
+            <form method="POST" action="/add_comment" onsubmit= "clearCommentBox()">
+                <textarea name="comment" id="commentBox" placeholder="Type your comment here..." rows="4" cols="150" required ></textarea>
+                <button type="submit" class="add-comment-button">Add Comment</button>
+            </form>
+        </div>
+    </footer>
+
 </html>
+

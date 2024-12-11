@@ -84,6 +84,12 @@ def create_app(test_config=None):
         resp.set_cookie('last_visited', 'home')  
         session['last_visited'] = 'home' 
 
+        session.pop('initial_grid', None)
+        session.pop('loaded_items', None)
+        session.pop('steps', None)
+        session.pop('unload_containers', None)
+        session.pop('balance_steps', None)
+
         curr_year = datetime.now().year
         file_name = f"KeoghsPort{curr_year}.txt"
 
@@ -142,7 +148,7 @@ def create_app(test_config=None):
                     ship = Ship(ship_grid)
                     loaded_items = session.get('loaded_items', [])
                     load_containers = [Container(item['name'], item['weight']) for item in loaded_items]
-                    unload_containers = [[0, 1], [0, 2]]  # This is temporary
+                    unload_containers = session.get('unload_containers', [])
                     steps = ship.get_transfer_steps(load_containers, unload_containers)
                     session['steps'] = [
                         {
@@ -382,8 +388,8 @@ def create_app(test_config=None):
                     with open(log_file_path, 'a') as log_file:
                         log_file.write(log_entry)
 
-                    if next_page == 'load':
-                        return redirect(url_for('load'))
+                    if next_page == 'unload':
+                        return redirect(url_for('unload'))
                     elif next_page == 'balance':
                         return redirect(url_for('balance'))
 
@@ -542,12 +548,59 @@ def create_app(test_config=None):
 
         return redirect(url_for('index'))
         return resp
-    
+        
+    @app.route('/unload', methods=['GET', 'POST'])
+    def unload():
+        from website.classes import get_ship_grid
+
+        manifest_path = session.get('manifest_path')
+        if not manifest_path:
+            return "Manifest not uploaded.", 400
+
+        ship_grid = get_ship_grid(manifest_path)
+        session['initial_grid'] = [
+            [
+                {
+                    'name': cell.name if cell else 'UNUSED',
+                    'weight': cell.weight if cell else 0,
+                }
+                for cell in row
+            ]
+            for row in ship_grid
+        ][::-1]
+
+        if request.method == 'POST':
+            items = request.form.get('items')
+            if items:
+                selected_cells = json.loads(items)
+                unload_containers = []
+
+                try:
+                    # Unloading
+                    for cell in selected_cells:
+                        display_row = cell['row']
+                        original_row = len(ship_grid) - 1 - display_row
+                        original_col = cell['col']
+                        unload_containers.append([original_row, original_col])
+
+                    session['unload_containers'] = unload_containers
+                    return redirect(url_for('load'))
+
+                except Exception as e:
+                    print(f"Error during unloading: {e}")
+                    return f"Error during unloading process: {e}", 500
+
+        return render_template('unload.html', prev_grid=session['initial_grid'], enumerate=enumerate)
+
+
+
+
     #hardcoded steps
     steps = [
     {'op': 'Move', 'name': 'Container A', 'from_pos': [1, 1], 'to_pos': [2, 1], 'time': 5},
     {'op': 'Move', 'name': 'Container B', 'from_pos': [1, 2], 'to_pos': [2, 2], 'time': 7},
     ]
+
 
     @app.route('/summary', methods=['GET', 'POST'])
     def summary():
@@ -564,5 +617,4 @@ def create_app(test_config=None):
             total_time=total_time,
             enumerate=enumerate,
         )
-
     return app
