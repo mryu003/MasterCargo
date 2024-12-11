@@ -320,6 +320,7 @@ def create_app(test_config=None):
             enumerate=enumerate,
             grid_length=len(display_grid)
         ))
+        #last visited page portion
         session['last_visited'] = 'balance'
         resp.set_cookie('last_visited', 'balance')  
         return resp
