@@ -90,23 +90,9 @@ def create_app(test_config=None):
         session.pop('unload_containers', None)
         session.pop('balance_steps', None)
 
-        curr_year = datetime.now().year
-        file_name = f"KeoghsPort{curr_year}.txt"
+        
 
-        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
 
-        if request.method == 'POST':
-            username = request.form.get('username')
-            if username:
-                if not os.path.exists(LOG_FOLDER):
-                    os.makedirs(LOG_FOLDER)
-
-                timestamp = get_pst_time()
-
-                with open(log_file_path, 'a') as file:
-                    file.write(f"{timestamp}\t{username} signed in \n")
-                
-                return '', 204
 
         last_visited_cookie = request.cookies.get('last_visited', 'None')
         last_visited_session = session.get('last_visited', 'None')
@@ -617,4 +603,21 @@ def create_app(test_config=None):
             total_time=total_time,
             enumerate=enumerate,
         )
+    
+    @app.route('/signIn', methods=['POST'])
+    def signIn():
+        curr_year = datetime.now().year
+        file_name = f"KeoghsPort{curr_year}.txt"
+        log_file_path = os.path.join(app.config['LOG_FOLDER'], file_name)
+        username = request.form.get('username')
+        if username:
+            if not os.path.exists(LOG_FOLDER):
+                os.makedirs(LOG_FOLDER)
+
+            timestamp = get_pst_time()
+            with open(log_file_path, 'a') as file:
+                file.write(f"{timestamp}\t{username} signed in \n")
+            
+            return '', 204
+
     return app
