@@ -118,7 +118,7 @@ class Transfer(Node):
     def generate_children(self):
         children = []
         for x, y in self.unload_containers:
-            if self.ship_grid[x + 1][y].name != UNUSED:
+            if x < MAX_ROW-1 and self.ship_grid[x + 1][y].name != UNUSED:
                 top_x, top_y = self.__find_top_container([x, y])
                 time, new_loc_x, new_loc_y = self.__move_top_container([top_x, top_y])
                 new_ship_grid = copy.deepcopy(self.ship_grid)
