@@ -64,7 +64,7 @@
         <div class="content-background">
             <div class="modal-content">
                 <p>Did you send the manifest file</p>
-                <button class="confirm-button" onclick="navigateToHome()">Yes, finish operation</button>
+                <button class="confirm-button" onclick="finishOperation()">Yes, finish operation</button>
             </div>
         </div>
     </div>
@@ -226,6 +226,18 @@
         function closePasswordModal() {
             document.getElementById('password-modal').style.display = 'none';
         }
+
+        function finishOperation() {
+            fetch('/finish_operation', {
+                method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        alert("Operation completed, manifest folder cleared!");
+                        document.getElementById('download-modal').style.display = 'none';
+                        window.location.href = "/home"; // Navigate to home page
+                    }
+                });
+            }
     </script>
 </body>
 
